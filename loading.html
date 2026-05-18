@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0a0a0a;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  #bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('city_background.jpg');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    filter: brightness(0.72) contrast(1.05);
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(5,10,20,0.2)  0%,
+      rgba(5,10,20,0.05) 50%,
+      rgba(5,10,20,0.5)  100%
+    );
+  }
+
+  .fog {
+    position: absolute;
+    left: -20%; right: -20%;
+    height: 100px;
+    background: rgba(20,25,35,0.38);
+    filter: blur(35px);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .fog:nth-child(1) { top: 60%; animation: driftFog 20s ease-in-out infinite alternate; }
+  .fog:nth-child(2) { top: 70%; opacity: 0.55; animation: driftFog 28s ease-in-out infinite alternate-reverse; }
+
+  @keyframes driftFog {
+    0%   { transform: translateX(-4%); }
+    100% { transform: translateX(4%); }
+  }
+
+  .drop {
+    position: absolute;
+    top: -80px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, transparent 0%, rgba(160,210,255,0.5) 100%);
+    animation: fall linear forwards;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(var(--dist)) skewX(-6deg); opacity: 0; }
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(140,200,255,0.28);
+    animation: rippleOut ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes rippleOut {
+    0%   { transform: scale(0.1); opacity: 0.6; }
+    100% { transform: scale(1);   opacity: 0; }
+  }
+
+  .red-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255,190,110,0.95) 0%, rgba(215,48,18,0.82) 30%, rgba(160,20,6,0.28) 62%, transparent 100%);
+    filter: blur(9px);
+    animation: pulseRed 4s ease-in-out infinite;
+  }
+  @keyframes pulseRed {
+    0%, 100% { opacity: 0.22; transform: scale(1); }
+    50%       { opacity: 0.58; transform: scale(1.08); }
+  }
+
+  #lightning {
+    position: fixed;
+    inset: 0;
+    background: rgba(200,225,255,0.85);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.04s ease-out;
+  }
+
+  @keyframes shake {
+    0%        { transform: translate(0, 0); }
+    15%       { transform: translate(-1px, 1px); }
+    30%       { transform: translate(2px, -1px); }
+    45%       { transform: translate(-1px, 1px); }
+    60%       { transform: translate(1px, -1px); }
+    75%       { transform: translate(-1px, 0px); }
+    100%      { transform: translate(0, 0); }
+  }
+
+  #loader {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #loading-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    filter:
+      drop-shadow(5px 6px 0px #d00010)
+
+  }
+
+  .letter {
+    font-family: 'Teko', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .letter-a-wrap {
+    display: inline-block;
+    background: #f5f0ea;
+    padding: 0 4px;
+    transform: skewX(-12deg);
+  }
+  .letter-a-wrap .letter {
+    display: inline-block;
+    transform: skewX(12deg) translateX(-5px);
+    color: #0d0d0d;
+    background: transparent;
+  }
+
+
+  #caption {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: rgba(210,70,55,0.5);
+    z-index: 20;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  #loader {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #loader-label {
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: rgba(210,70,55,0.5);
+    margin-bottom: 8px;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="scene">
+  <div id="bg"></div>
+  <div id="overlay"></div>
+  <div class="fog"></div>
+  <div class="fog"></div>
+
+  <div class="red-glow" style="width:80px;height:80px;left:-1%;top:65%;animation-delay:-0s;"></div>
+  <div class="red-glow" style="width:80px;height:80px;left:4%;top:58%;animation-delay:-0.9s;"></div>
+
+  <div class="red-glow" style="width:110px;height:110px;left:17%;top:77%;animation-delay:-1.7s;"></div>
+
+  <div class="red-glow" style="width:110px;height:110px;right:2%;top:30%;animation-delay:-2.5s;"></div>
+  <div class="red-glow" style="width:110px;height:110px;right:14%;top:43%;animation-delay:-0.4s;"></div>
+  <div class="red-glow" style="width:110px;height:110px;right:9%;top:65%;animation-delay:-3.1s;"></div>
+  <div class="red-glow" style="width:110px;height:110px;right:16%;bottom:-6%;animation-delay:-1.3s;"></div>
+
+  <div class="red-glow" style="width:52px;height:52px;right:36%;top:33%;animation-delay:-2.0s;"></div>
+  <div class="red-glow" style="width:52px;height:52px;right:32%;top:37%;animation-delay:-3.4s;"></div>
+  <div class="red-glow" style="width:52px;height:52px;right:25%;top:34%;animation-delay:-0.7s;"></div>
+  <div class="red-glow" style="width:40px;height:40px;right:31%;top:32%;animation-delay:-2.8s;"></div>
+
+
+
+</div>
+
+<div id="loader">
+  <div id="loading-wrap"></div>
+</div>
+
+<div id="lightning"></div>
+<script>
+  const scene = document.getElementById('scene');
+  const lightning = document.getElementById('lightning');
+  const W = () => window.innerWidth;
+  const H = () => window.innerHeight;
+
+
+  function spawnDrop() {
+    const drop = document.createElement('div');
+    drop.className = 'drop';
+    const x        = Math.random() * (W() + 100) - 50;
+    const height   = Math.random() * 55 + 18;
+    const width    = Math.random() * 1 + 1;
+    const duration = Math.random() * 0.3 + 0.48;
+    const delay    = Math.random() * 0.15;
+    const dist     = H() + height + 10;
+    const opacity  = Math.random() * 0.35 + 0.35;
+    drop.style.cssText = `left:${x}px;height:${height}px;width:${width}px;--dist:${dist}px;animation-duration:${duration}s;animation-delay:${delay}s;opacity:${opacity};`;
+    drop.addEventListener('animationend', () => {
+      spawnRipple(x, H() - 20 + Math.random() * 15);
+      drop.remove();
+    }, { once: true });
+    scene.appendChild(drop);
+  }
+
+  function spawnRipple(x, y) {
+    const r = document.createElement('div');
+    r.className = 'ripple';
+    const size = Math.random() * 14 + 5;
+    r.style.cssText = `left:${x - size/2}px;top:${y}px;width:${size}px;height:${size*0.3}px;animation-duration:${Math.random()*0.4+0.65}s;`;
+    r.addEventListener('animationend', () => r.remove(), { once: true });
+    scene.appendChild(r);
+  }
+
+  setInterval(() => { for (let i = 0; i < 3; i++) spawnDrop(); }, 65);
+
+  function strikeLightning() {
+    // main flash
+    lightning.style.opacity = '1';
+    // quick cut
+    setTimeout(() => { lightning.style.opacity = '0'; }, 60);
+    // second flicker
+    setTimeout(() => { lightning.style.opacity = '0.75'; }, 100);
+    setTimeout(() => { lightning.style.opacity = '0'; }, 145);
+    // faint afterglow flicker
+    setTimeout(() => { lightning.style.opacity = '0.3'; }, 190);
+    setTimeout(() => { lightning.style.opacity = '0'; }, 260);
+
+    // screen shake on main flash
+    scene.style.animation = 'none';
+    scene.offsetHeight; // reflow to restart
+    scene.style.animation = 'shake 0.28s ease-out';
+
+    // burst of heavy rain
+    for (let i = 0; i < 30; i++) setTimeout(spawnDrop, i * 12);
+  }
+
+  function scheduleLightning() {
+    setTimeout(() => {
+      strikeLightning();
+      scheduleLightning();
+    }, Math.random() * 18000 + 10000);
+  }
+
+  // guaranteed first strike at exactly 3 seconds, then continue randomised (10–28s)
+  setTimeout(() => { strikeLightning(); scheduleLightning(); }, 3000);
+
+  // loading-component (components/loading-component.html)
+  const TEXT      = 'LOADING...';
+  const WRAP      = document.getElementById('loading-wrap');
+  const COLORS    = ['#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea','#f5f0ea'];
+  const BOXES     = ['plain','plain','box-w','plain','plain','box-w','plain','plain','plain','plain'];
+  const SIZES     = [5.2, 3.8, 5.3, 4.4, 5.8, 3.5, 4.9, 3.2, 4.1, 3.0];
+  const BASE_ROTS = [-4, 3, -2, 5, -6, 2, -3, 7, -5, 4];
+
+  const UP_Y    = -16;
+  const DOWN_Y  =  4;
+  const TICK_MS  = 120;
+  const PAUSE_MS = 2000;
+  const NEIGHBOR_FALLOFF = [1, 0.45];
+
+  const spans   = [];
+  const wrapEls = [];
+
+  TEXT.split('').forEach((ch, i) => {
+    const color = COLORS[i];
+    const box   = BOXES[i];
+    const size  = SIZES[i];
+
+    if (box === 'box-w' && (i === 2 || i === 5)) {
+      const outer = document.createElement('div');
+      outer.className = 'letter-a-wrap';
+      const span = document.createElement('span');
+      span.className = 'letter';
+      span.textContent = ch;
+      span.style.fontSize = size + 'rem';
+      span.style.color = '#0d0d0d';
+      span.style.fontStyle = 'italic';
+      outer.appendChild(span);
+      WRAP.appendChild(outer);
+      spans.push(span);
+      wrapEls.push(outer);
+    } else {
+      const span = document.createElement('span');
+      span.className = 'letter';
+      span.textContent = ch;
+      span.style.fontSize = size + 'rem';
+      if (box === 'box-w') {
+        span.style.background = color;
+        span.style.color      = '#0d0d0d';
+        span.style.padding    = '0 4px';
+        span.style.position   = 'relative';
+        span.style.top        = '0.12em';
+      } else if (box === 'box-b') {
+        span.style.background = '#f5f0ea';
+        span.style.color      = '#0d0d0d';
+        span.style.padding    = '0 4px';
+        span.style.position   = 'relative';
+        span.style.top        = '0.12em';
+      } else {
+        span.style.color      = '#f5f0ea';
+        span.style.background = '#0d0d0d';
+        span.style.padding    = '0 3px';
+        span.style.position   = 'relative';
+        span.style.top        = '0.12em';
+      }
+      if (i === 6) span.dataset.scaleY = '0.65';
+      if (i === 1) {
+        span.style.position = 'relative';
+        span.style.display  = 'inline-block';
+        const whiteRect = document.createElement('span');
+        whiteRect.style.cssText = `
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -58%);
+          width: 0.28em;
+          height: 0.48em;
+          background: #f5f0ea;
+          pointer-events: none;
+          z-index: 1;
+        `;
+        span.appendChild(whiteRect);
+        const star = document.createElement('span');
+        star.className = 'star-in-o';
+        star.textContent = '★';
+        star.style.cssText = `
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -54%) scale(0.52) rotate(10deg);
+          color: #0d0d0d;
+          font-size: ${size}rem;
+          line-height: 1;
+          pointer-events: none;
+          z-index: 2;
+        `;
+        span.appendChild(star);
+      }
+      WRAP.appendChild(span);
+      spans.push(span);
+      wrapEls.push(span);
+    }
+  });
+
+  const LEN = spans.length;
+
+  function applyTransform(i, y, extraRot) {
+    const el  = wrapEls[i];
+    const rot = BASE_ROTS[i] + extraRot;
+    if (i === 2 || i === 5) {
+      el.style.transform = `translateY(${y}px) rotate(${rot}deg) skewX(-12deg)`;
+    } else if (i === 6) {
+      el.style.transform = `translateY(${y}px) rotate(${rot}deg) scaleY(0.65)`;
+    } else {
+      el.style.transform = `translateY(${y}px) rotate(${rot}deg)`;
+    }
+  }
+
+  function setRest() {
+    for (let i = 0; i < LEN; i++) applyTransform(i, DOWN_Y, 1);
+  }
+
+  function runWave() {
+    let step = 0;
+    function tick() {
+      if (step < LEN) {
+        for (let i = 0; i < LEN; i++) {
+          const dist = Math.abs(i - step);
+          if (dist === 0) {
+            applyTransform(i, UP_Y, -2);
+          } else if (dist === 1) {
+            applyTransform(i, UP_Y * NEIGHBOR_FALLOFF[1], 0);
+          } else {
+            applyTransform(i, DOWN_Y, 1);
+          }
+        }
+        step++;
+        setTimeout(tick, TICK_MS);
+      } else {
+        setRest();
+        setTimeout(runWave, PAUSE_MS);
+      }
+    }
+    tick();
+  }
+
+  setRest();
+  runWave();
+</script>
+</body>
+</html>
