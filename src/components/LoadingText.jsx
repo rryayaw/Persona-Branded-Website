@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+//tunables for the loading text
 const TEXT = 'LOADING...';
 const BOXES = ['plain', 'plain', 'box-w', 'plain', 'plain', 'box-w', 'plain', 'plain', 'plain', 'plain'];
 const SIZES = [5.2, 3.8, 5.3, 4.4, 5.8, 3.5, 4.9, 3.2, 4.1, 3.0];

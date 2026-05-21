@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import LoadingText from './LoadingText.jsx';
 
+//glows sesuai dgn the background (only correct for unadjusted resolution on websites on dekstop)
 const RED_GLOWS = [
   { w: 80, h: 80, left: '-1%', top: '65%', delay: '0s' },
   { w: 80, h: 80, left: '4%', top: '58%', delay: '-0.9s' },

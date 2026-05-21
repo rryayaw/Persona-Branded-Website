@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 
 // Tunables: js adjust as needed
 const DURATION = 1300;     // ms for the full wipe
-const JAG_SEGMENTS = 3;    // segments along the bolt → 2–3 sharp edges
-const STROKE_LEFT = 28;    // band thickness at the upper-left end (px)
-const STROKE_RIGHT = 40;   // band thickness at the lower-right end (px)
+const JAG_SEGMENTS = 3;    // segments along the bolt, better 3-4 sharp edges
+const STROKE_LEFT = 40;    // band thickness at the upper-left end (px)
+const STROKE_RIGHT = 100;   // band thickness at the lower-right end (px)
 const JAG_MAG = 11;        // jag amplitude, in % of viewport height
 
 function makeJagProfile(segments) {
@@ -46,8 +46,8 @@ export default function TransitionWipe({ onComplete, children }) {
       const H = window.innerHeight;
       const L = Math.hypot(W, H);
 
-      // Bolt runs along the screen diagonal "\" (top-left → bottom-right);
-      // it sweeps along its normal n (up-right), so it advances face-on.
+      // line runs along the screen diagonal "\" (top-left to bottom-right)
+      //no need to bother with this math stuff vvvv
       const dx = W / L, dy = H / L;          // unit vector along the bolt
       const nx = H / L, ny = -W / L;         // unit normal (sweep direction)
       const cx = W / 2, cy = H / 2;          // screen centre
@@ -56,10 +56,10 @@ export default function TransitionWipe({ onComplete, children }) {
       const OFF = (W * H) / L + 200;         // sweep amplitude (fully off-screen each end)
       const center = OFF * (2 * p - 1);      // bolt offset along n: −OFF → +OFF
 
-      // jag perturbation (px) at normalised position along the bolt
+      //jag perturbation (px) at normalised position along the bolt
       const jagAt = (u) => (jag[Math.round(u * JAG_SEGMENTS)] / 100) * H;
 
-      // point on the bolt at step i, pushed extra px along the normal
+      //point on the bolt at step i, pushed extra px along the normal
       const pt = (i, push) => {
         const u = i / JAG_SEGMENTS;
         const s = -S + u * 2 * S;
