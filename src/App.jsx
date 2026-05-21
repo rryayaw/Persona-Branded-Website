@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import Loading from './components/Loading.jsx';
-import LightningWipe from './components/LightningWipe.jsx';
+import TransitionWipe from './components/TransitionWipe.jsx';
 import Navbar from './components/Navbar.jsx';
 import SectionNav from './components/SectionNav.jsx';
 import HeroSection from './components/HeroSection.jsx';
@@ -48,9 +48,9 @@ export default function App() {
 
       {/* Lightning wipe: Loading sits on top, clipped away from the bottom up */}
       {stage === 'transitioning' && (
-        <LightningWipe onComplete={handleTransitionComplete}>
+        <TransitionWipe onComplete={handleTransitionComplete}>
           <Loading />
-        </LightningWipe>
+        </TransitionWipe>
       )}
     </>
   );
