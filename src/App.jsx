@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Loading from './components/Loading.jsx';
 import TransitionWipe from './components/TransitionWipe.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -11,7 +11,9 @@ import NewsSection from './components/NewsSection.jsx';
 
 function AppContent() {
   return (
-    <div className="flex min-h-screen">
+    <>
+    <Navbar />
+    <div className="flex min-h-screen pt-[68px]">
       <aside className="w-[200px] shrink-0 bg-wire-pink" />
       <main className="relative flex-1 bg-white">
         <SectionNav />
@@ -23,12 +25,41 @@ function AppContent() {
       </main>
       <aside className="w-[200px] shrink-0 bg-wire-pink" />
     </div>
+    </>
   );
 }
 
 // stage: 'loading' → 'transitioning' → 'app'
 export default function App() {
   const [stage, setStage] = useState('loading');
+  const bgmRef = useRef(null);
+
+  useEffect(() => {
+    const audio = new Audio('/assets/audio/bgm-song1-lastSuprise.mp3');
+    audio.loop = true;
+    audio.volume = 0.2;
+    bgmRef.current = audio;
+
+    const play = () => audio.play().catch(() => {});
+
+    // Try immediate autoplay; browsers may block it until a user gesture
+    play();
+
+    // Fallback: start on first interaction if autoplay was blocked
+    const onInteract = () => {
+      if (audio.paused) play();
+      window.removeEventListener('click', onInteract);
+      window.removeEventListener('keydown', onInteract);
+    };
+    window.addEventListener('click', onInteract);
+    window.addEventListener('keydown', onInteract);
+
+    return () => {
+      audio.pause();
+      window.removeEventListener('click', onInteract);
+      window.removeEventListener('keydown', onInteract);
+    };
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setStage('transitioning'), 5000);

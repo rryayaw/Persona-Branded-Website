@@ -16,7 +16,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-[100] flex items-center justify-between border-b border-wire-border bg-neutral-800 px-6 py-3">
+    <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between border-b border-wire-border bg-neutral-800 px-[210px] py-3">
       {/* Logo slot to keep a fixed footprint in the nav; the big logo overflows it */}
       <div className="relative h-11 w-[210px]">
         {/* Big logo*/}
