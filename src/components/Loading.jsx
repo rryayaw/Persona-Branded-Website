@@ -16,7 +16,7 @@ const RED_GLOWS = [
   { w: 40, h: 40, right: '31%', top: '32%', delay: '-2.8s' },
 ];
 
-export default function Loading() {
+export default function Loading({ skipFade = false }) {
   const sceneRef = useRef(null);
   const lightningRef = useRef(null);
 
@@ -113,7 +113,7 @@ export default function Loading() {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#0a0a0a]">
+    <div className="fixed inset-0 overflow-hidden bg-[#0a0a0a]" style={skipFade ? undefined : { animation: 'fadeIn 0.6s ease-out forwards' }}>
       <div ref={sceneRef} className="fixed inset-0 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-top bg-no-repeat"

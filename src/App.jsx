@@ -67,7 +67,7 @@ export default function App() {
       {/* Lightning wipe: Loading sits on top, clipped away from the bottom up */}
       {stage === 'transitioning' && (
         <TransitionWipe onComplete={handleTransitionComplete}>
-          <Loading />
+          <Loading skipFade />
         </TransitionWipe>
       )}
     </>

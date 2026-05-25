@@ -21,12 +21,17 @@ html {
 
 body {
   font-family: var(--font-serif);
-  background: var(--color-wire-bg);
+  background: #0a0a0a;
   color: var(--color-wire-text);
   min-height: 100vh;
 }
 
 /* ───────── Loading screen ───────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 @keyframes driftFog {
   0%   { transform: translateX(-4%); }
