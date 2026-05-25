@@ -14,7 +14,6 @@ function AppContent() {
     <div className="flex min-h-screen">
       <aside className="w-[200px] shrink-0 bg-wire-pink" />
       <main className="relative flex-1 bg-white">
-        <Navbar />
         <SectionNav />
         <HeroSection />
         <GamesSection />
