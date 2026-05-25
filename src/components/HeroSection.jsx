@@ -1,14 +1,51 @@
+import { useEffect, useState } from 'react';
+import HeroBackground from './HeroBackground.jsx';
+import GlassShards from './GlassShards.jsx';
+
+const POP_DURATION = 1200; // ms delay before graphic animates in
+
 export default function HeroSection() {
+  const [popped, setPopped] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPopped(true), POP_DURATION);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <section
       id="hero"
-      className="relative flex min-h-[90vh] flex-col items-center justify-center gap-8 border-b border-wire-border px-10 pb-20 pt-[60px] text-center"
+      className="relative flex min-h-[90vh] flex-col items-center justify-center gap-8 border-b border-wire-border px-10 pb-20 pt-[60px] text-center bg-transparent"
     >
-      <div className="absolute inset-x-[60px] bottom-20 top-10 z-[1] flex items-center justify-center rounded-xl bg-[#e8e8e8] text-base text-wire-text">
-        Big graphic as a background
-      </div>
+      <style>{`
+        @keyframes graphic-pop {
+          0%   { transform: scale(0.45) rotate(-8deg) translateY(80px); opacity: 0; }
+          60%  { transform: scale(1.42) rotate(1deg) translateY(-8px); opacity: 1; }
+          80%  { transform: scale(1.38) rotate(-1deg) translateY(4px); }
+          100% { transform: scale(1.4) rotate(0deg) translateY(0px); opacity: 1; }
+        }
+        @keyframes graphic-hover {
+          0%, 100% { transform: scale(1.4) translateY(0px) rotate(0deg); }
+          50%       { transform: scale(1.4) translateY(-14px) rotate(0.6deg); }
+        }
+        .graphic-pop {
+          animation:
+            graphic-pop  1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+            graphic-hover 4s ease-in-out 0.85s infinite;
+        }
+      `}</style>
 
-      <div className="absolute inset-x-10 bottom-10 z-[2] flex items-end justify-between gap-6">
+      <HeroBackground />
+      <GlassShards />
+      <img
+        src="/assets/graphic-1.png"
+        alt=""
+        draggable={false}
+        className={`absolute inset-x-[60px] bottom-20 top-10 z-[1] h-[calc(100%-120px)] w-[calc(100%-120px)] object-contain ${popped ? 'graphic-pop' : 'opacity-0'}`}
+        style={{ filter: 'drop-shadow(3px 3px 0 #FF0000)' }}
+      />
+
+      <div className="absolute inset-x-10 bottom-10 z-[3] flex items-end justify-between gap-6">
         <div className="h-[70px] w-[100px] rounded-lg bg-wire-block" />
 
         <div className="absolute left-1/2 w-[360px] -translate-x-1/2 text-center">
