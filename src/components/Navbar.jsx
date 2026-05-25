@@ -35,7 +35,7 @@ export default function Navbar() {
         />
         {/* small logo*/}
         <img
-          src="/p5_logo.png"
+          src="/logo-p5.png"
           alt="Persona 5"
           draggable={false}
           className={`pointer-events-none absolute left-0 top-1/2 h-9 -translate-y-1/2 h-[50px] object-contain transition-all duration-700 ease-out ${
@@ -49,13 +49,13 @@ export default function Navbar() {
           Purchase now
         </button>
         <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
-          <img src="/assets/icon_music.png" alt="Music" className="h-9 w-9 object-contain" />
+          <img src="/assets/icon-music.png" alt="Music" className="h-9 w-9 object-contain" />
         </button>
         <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
-          <img src="/assets/icon_sound.png" alt="Sound" className="h-8 w-8 object-contain" />
+          <img src="/assets/icon-sound.png" alt="Sound" className="h-8 w-8 object-contain" />
         </button>
         <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
-          <img src="/assets/icon_mail.png" alt="Mail" className="h-9 w-9 object-contain" />
+          <img src="/assets/icon-mail.png" alt="Mail" className="h-9 w-9 object-contain" />
         </button>
       </div>
     </nav>

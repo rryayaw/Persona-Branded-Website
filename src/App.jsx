@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Loading from './components/Loading.jsx';
 import TransitionWipe from './components/TransitionWipe.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -8,6 +8,12 @@ import GamesSection from './components/GamesSection.jsx';
 import CharactersSection from './components/CharactersSection.jsx';
 import MusicSection from './components/MusicSection.jsx';
 import NewsSection from './components/NewsSection.jsx';
+
+// Module-level singleton — survives StrictMode double-invoke and React remountsx
+const bgm = new Audio('/assets/audio/bgm-song1-lastSuprise.mp3');
+bgm.loop = true;
+bgm.volume = 0.2;
+bgm.preload = 'auto';
 
 function AppContent() {
   return (
@@ -32,22 +38,14 @@ function AppContent() {
 // stage: 'loading' → 'transitioning' → 'app'
 export default function App() {
   const [stage, setStage] = useState('loading');
-  const bgmRef = useRef(null);
-
   useEffect(() => {
-    const audio = new Audio('/assets/audio/bgm-song1-lastSuprise.mp3');
-    audio.loop = true;
-    audio.volume = 0.2;
-    bgmRef.current = audio;
+    const play = () => bgm.play().catch(() => {});
 
-    const play = () => audio.play().catch(() => {});
-
-    // Try immediate autoplay; browsers may block it until a user gesture
     play();
 
     // Fallback: start on first interaction if autoplay was blocked
     const onInteract = () => {
-      if (audio.paused) play();
+      if (bgm.paused) play();
       window.removeEventListener('click', onInteract);
       window.removeEventListener('keydown', onInteract);
     };
@@ -55,7 +53,6 @@ export default function App() {
     window.addEventListener('keydown', onInteract);
 
     return () => {
-      audio.pause();
       window.removeEventListener('click', onInteract);
       window.removeEventListener('keydown', onInteract);
     };
