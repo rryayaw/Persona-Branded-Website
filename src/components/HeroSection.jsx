@@ -46,19 +46,23 @@ export default function HeroSection() {
       />
 
       <div className="absolute inset-x-10 bottom-10 z-[3] flex items-end justify-between gap-6">
-        <div className="h-[70px] w-[100px] rounded-lg bg-wire-block" />
+        
+        <img src="/assets/rating-teen.svg" alt="Rated Teen" className="h-[70px] w-auto" draggable={false} />
 
         <div className="absolute left-1/2 w-[360px] -translate-x-1/2 text-center">
-          <p className="text-[13px] leading-[1.7] text-wire-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-            exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          <p className="text-[13px] leading-[1.7] text-white">
+          On the boundary between reality and ruin, a group of outcasts made a choice. Their weapon: the mask. Their target: the rotten hearts of a broken world. Your turn begins now.
           </p>
           <div className="mt-4 text-center text-xl text-wire-block-dark">▼</div>
         </div>
 
-        <div className="flex h-[70px] w-[200px] items-center justify-center rounded-lg bg-wire-block text-[13px] text-wire-text-dark">
-          Available on
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[11px] font-bold tracking-widest text-white uppercase">Available on</span>
+          <div className="flex items-center gap-4 border-2 border-black bg-white px-4 py-2 rounded-md">
+            <img src="/assets/logo-ps.svg"   alt="PS"   className="h-8 w-auto"  draggable={false} />
+            <img src="/assets/logo-xbox.svg"  alt="Xbox"  className="h-8 w-auto"  draggable={false} />
+            <img src="/assets/logo-steam.svg" alt="Steam" className="h-8 w-auto"  draggable={false} />
+          </div>
         </div>
       </div>
     </section>
