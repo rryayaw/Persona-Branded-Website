@@ -46,51 +46,84 @@ Every hover, scroll, and selection should have weight and personality.
 
 ## Current state
 
-### App flow (implemented)
+### App flow
 Three-phase state machine in `App.jsx`:
-1. **Loading** (5s) — full-screen atmospheric loading screen
+1. **Loading** (5s) — full-screen atmospheric loading screen, fades in from black on boot
 2. **Transitioning** (1.3s) — lightning bolt wipe sweeps top-left to bottom-right
-3. **App** — main layout revealed
+3. **App** — main layout revealed; transparent main + invisible asides let hero background show through
+
+### BGM
+- Module-level Audio singleton (`bgm-song1-lastSuprise.mp3`), `loop`, `volume 0.2`, `preload auto`
+- Fires `play()` immediately; `.catch()` attaches interaction listeners (`click`, `keydown`, `pointerdown`) as fallback for autoplay-blocked browsers
+- No React effect — survives StrictMode double-invoke and hot reloads without re-buffering
 
 ### Components built
 
 **`Loading.jsx`** — 5-second loading screen
+- Fades in from black on first mount via `fadeIn` keyframe; `skipFade` prop suppresses it when reused inside `TransitionWipe`
 - Dark `#0a0a0a` background with city image backdrop + gradient overlay
 - Procedural rain: drops spawn every 65ms, each spawns ripples on impact
 - Lightning: random strikes every 10–18s, trigger scene shake + drop burst
 - 11 red radial gradients pulse on a 4s cycle at varying positions
-- All timers and animation frames properly cleaned up on unmount
 
 **`LoadingText.jsx`** — animated "LOADING..." display (used inside Loading)
 - Each letter has a unique size (3–6rem), rotation, and box overlay
-- Wave bounce animation: each letter rises then falls in sequence, 120ms per step, 2s pause between waves
+- Wave bounce: each letter rises then falls in sequence, 120ms per step, 2s pause between waves
 - The "L" has a floating star and a white cutout box inside it
 
 **`TransitionWipe.jsx`** — lightning bolt wipe transition
 - SVG clip-path animates a jagged bolt diagonally across the screen
 - 3 jag segments, 40–100px stroke, ~11% viewport height jag amplitude
-- 1.3s `easeInOut` progression — loading screen is clipped away frame by frame
+- 1.3s `easeInOut` — loading screen is clipped away frame by frame
 
-**`Navbar.jsx`** — sticky top bar
+**`Navbar.jsx`** — fixed full-width top bar
+- `fixed top-0 left-0 right-0` with `px-[200px]` so content aligns with the main column
 - IntersectionObserver watches the hero section
 - While hero is visible: large `logo.png` fades in at scale
-- Once scrolled past: compact `p5_logo.png` fades in (700ms easing)
-- Right side: "Purchase now" button + music, sound, and mail icon buttons
+- Once scrolled past: compact `logo-p5.png` fades in (700ms easing)
+- Right side: "Purchase now" button + music, sound, mail icon buttons
 
 **`SectionNav.jsx`** — fixed right-side jump nav
 - 5 anchor links: `#hero`, `#games`, `#characters`, `#music`, `#news`
 - Centered vertically on the right edge, z-index 99
-- Rounded buttons with hover darkening
 
-**Section skeletons** — all five sections exist as placeholder layouts:
-- `HeroSection.jsx`, `GamesSection.jsx`, `CharactersSection.jsx`, `MusicSection.jsx`, `NewsSection.jsx`
-- Each is `min-h-screen`, has its anchor `id`, and a basic Tailwind wireframe structure
+**`HeroBackground.jsx`** — canvas P5 background, scoped to hero section
+- `position: absolute`, `left: 50%`, `transform: translateX(-50%)`, `width: 100vw` — breaks out of the main column to fill full viewport width, clipped vertically at section boundary
+- Halftone dot grid (pulsing alpha), faint white grid overlay, red slash panels
+- 100 gaussian-clustered glass-shard triangles floating with radial pulse + perpendicular sway
+- Two sweeping helicopter spotlights with flicker (`screen` blend mode)
+- Red corner accent triangles
+- Tunables: `radialAmp`, `radialSpeed`, `swayAmp`, `swaySpeed`, `size` (multiplier), `count`
+
+**`GlassShards.jsx`** — orbiting glass shard canvas overlay on the hero graphic
+- 15 shards (triangles, diamonds, kites, trapezoids, custom shards) orbit the canvas center
+- Launch animation: burst outward with `easeOutExpo`, then blend into hover float via `easeInOutCubic`
+- Canvas positioned `absolute inset-0 z-[2]`, shifted `translateY(10px)`
+- Tunables: `RADIUS`, `SIZE`, `SWAY`, `SWAY_SPD`, `NUM`, `DELAY` (ms before launch)
+
+**`HeroSection.jsx`** — fully implemented landing section
+- `HeroBackground` canvas (full-width, z-0, clipped to section)
+- `GlassShards` canvas overlay (z-2, orbiting above graphic)
+- `graphic-1.png` — hidden for `POP_DURATION` (1.2s), then `graphic-pop` animation:
+  - Springs in from 45% scale + −8° rotation + 80px below, overshoots to 142%, settles at 140%
+  - `cubic-bezier(0.34, 1.56, 0.64, 1)` spring curve
+  - Chains into `graphic-hover` — 4s gentle bob ±14px + 0.6° rock, loops forever
+- Bottom-left: ESRB Teen rating badge
+- Bottom-center: series blurb text + blinking scroll arrow
+- Bottom-right: "Available on" label + white/black-bordered box with PS, Xbox, Steam SVG logos
+
+**Section skeletons** — placeholder layouts ready for content:
+- `GamesSection.jsx`, `CharactersSection.jsx`, `MusicSection.jsx`, `NewsSection.jsx`
 
 ### Assets in place
-- `public/logo.png` — large Persona 5 logo (hero navbar)
-- `public/p5_logo.png` — compact logo (scrolled navbar)
+- `public/logo.png` — large Persona 5 logo (hero navbar state)
+- `public/logo-p5.png` — compact logo (scrolled navbar state)
 - `public/city_background.jpg` — loading screen backdrop
-- `public/assets/icon_mail.png`, `icon_music.png`, `icon_sound.png` — navbar icons
+- `public/assets/icon-mail.png`, `icon-music.png`, `icon-sound.png` — navbar icons
+- `public/assets/graphic-1.png` — hero section main graphic
+- `public/assets/rating-teen.svg` — ESRB Teen badge
+- `public/assets/logo-ps.svg`, `logo-xbox.svg`, `logo-steam.svg` — platform logos
+- `public/assets/audio/bgm-song1-lastSuprise.mp3` — background music
 - `public/assets/Persona 5 Looping Stars Background.mp4` — available for use
 
 ### Theme tokens (Tailwind `@theme`)
@@ -101,35 +134,30 @@ Three-phase state machine in `App.jsx`:
 --color-wire-*: wireframe grays (temporary, will be replaced)
 ```
 
+### Global styles
+- `body { background: #0a0a0a }` — page starts black, no white flash on load
+- `main { bg-transparent }`, asides `opacity-0` — hero background shows through unobstructed
+
 ---
 
 ## Sections — planned content
 
-### 1. Home
-Full viewport landing.
-- Large hero graphic or animated visual as the main focal point
-- Bottom-left: TEEN ESRB rating badge
-- Bottom-right: "Wishlist on Steam" + platform badges (Steam, console icons)
-- Middle-bottom: short about/series blurb
-- Below blurb: blinking downward scroll arrow
-
 ### 2. Games
 Full viewport per game, game switcher at bottom.
-- Entire section color scheme shifts per active game (P3=blue, P4=yellow, P5=red) — background, accents, geometry all change
+- Entire section color scheme shifts per active game (P3=blue, P4=yellow, P5=red)
 - Active game: title in P5 display font, description, image gallery with arrow nav, "Buy Now" → Steam link
 - Bottom row: 3 slabs (P3, P4, P5) — click to switch, auto-advances after idle timeout
 
 ### 3. Characters
 Character showcase with selector and detail view.
-- Selector row: character portraits/icons — hover triggers entrance animation, click switches display
+- Selector row: portraits/icons — hover triggers entrance animation, click switches display
 - Active character: full artwork, name in P5 font, bio text, Persona symbol/insignia as design element
 
 ### 4. Music
 In-page music player for Persona series tracks.
 - Currently playing: song name, artist/composer, source game
 - Song list: title + source game per entry
-- Play/pause control on the left
-- Live waveform/audio visualizer alongside the player
+- Play/pause control; live waveform/audio visualizer
 - Default track plays on load; last selected track persists via `localStorage`
 
 ### 5. News
@@ -141,15 +169,14 @@ Persona series news feed.
 ---
 
 ## What's next
-1. Replace wireframe section skeletons with real P5-styled content and layouts
-2. Implement Games section with per-game theming (color, geometry, data)
-3. Build Character selector with entrance animations
-4. Build Music player with waveform visualizer and `localStorage` persistence
-5. Build News feed layout
+1. Build Games section with per-game theming (color, geometry, data)
+2. Build Character selector with entrance animations
+3. Build Music player with waveform visualizer and `localStorage` persistence
+4. Build News feed layout
+5. Apply P5 ransom-note letter style to Navbar items
 6. Add Framer Motion for spring-curve easing across all transitions and interactions
-7. Apply P5 ransom-note letter style to Navbar items
-8. Hook up real game/character/news data
-9. Deploy to Vercel
+7. Hook up real game/character/news data
+8. Deploy to Vercel
 
 ---
 

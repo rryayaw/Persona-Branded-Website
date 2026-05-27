@@ -1,23 +1,455 @@
-const LINKS = [
-  { href: '#hero', label: 'section selector 1' },
-  { href: '#games', label: 'section selector 2' },
-  { href: '#characters', label: 'section selector 3' },
-  { href: '#music', label: 'section selector 4' },
-  { href: '#news', label: 'section selector 5' },
+import { useEffect, useRef } from 'react';
+
+const NAV_ITEMS = [
+  { href: '#hero',       label: 'Hero' },
+  { href: '#games',      label: 'Games' },
+  { href: '#characters', label: 'Characters' },
+  { href: '#music',      label: 'Music' },
+  { href: '#news',       label: 'News' },
 ];
 
+// ── Tunables ──────────────────────────────────────────────
+const TUNE = {
+  // Arc geometry
+  containerW:  460,    // px — width of the arc bounding box
+  containerH:  480,    // px — height of the arc bounding box
+  arcOffset:   220,    // px — how far the arc center sits BEYOND the right edge of the container
+  radius:      440,    // px — arc radius (larger = flatter arc)
+  arcStart:    -21,    // deg — angle of first item (negative = above center)
+  arcEnd:       21,    // deg — angle of last item  (positive = below center)
+  tilt:         0.75,  // multiplier — how much each item tilts with the arc (0 = no tilt)
+
+  // Letter sizing & chaos
+  baseSizeRem:  3.0,   // rem — base font size for letters
+  sizeVariance: 1.8,   // rem — ± random variance on top of base size
+  minSizeRem:   1.8,   // rem — minimum letter size
+  idleNudgeY:   7,     // px — max vertical nudge in idle state
+  idleNudgeR:   4,     // deg — max rotation nudge in idle state
+  hoverNudgeY:  13,    // px — max vertical nudge on hover
+  hoverNudgeR:  8,     // deg — max rotation nudge on hover
+
+  // Wave (active state)
+  waveSpeed:    0.055, // wave scroll speed per frame
+  waveAmp:      0.12,  // wave amplitude as fraction of letter height
+  waveMidline:  0.50,  // wave midline position as fraction of letter height (0=top, 1=bottom)
+  waveFreq:     1.8,   // wave frequency multiplier
+  transitionMs: 280,   // ms — hover→idle interpolation duration on activation
+
+  // Canvas padding
+  nudgePad:     16,    // px — extra canvas padding to accommodate letter nudges
+  boxPad:       4,     // px — horizontal padding inside box-style letters
+
+  // Position
+  rightEdge:    150,   // px — distance from the right edge of the viewport (increase = move left)
+};
+// ──────────────────────────────────────────────────────────
+
+// ── Seeded random helpers ──────────────────────────────────
+function makeRand(seed) {
+  let s = (seed ^ 0xdeadbeef) >>> 0;
+  return () => { s = (Math.imul(1664525, s) + 1013904223) >>> 0; return s / 0xffffffff; };
+}
+function genNudges(len, rand, yRange, rRange) {
+  return Array.from({ length: len }, () => ({
+    y: (rand() - 0.5) * yRange,
+    r: (rand() - 0.5) * rRange,
+  }));
+}
+function genSizes(len, rand) {
+  return Array.from({ length: len }, () =>
+    Math.max(TUNE.minSizeRem, TUNE.baseSizeRem + (rand() - 0.5) * TUNE.sizeVariance));
+}
+function genBoxes(len, rand) {
+  return Array.from({ length: len }, () => {
+    const v = rand();
+    if (v < 0.30) return 'box-w';
+    if (v < 0.52) return 'box-b';
+    return 'plain';
+  });
+}
+
+// ── Letter style applier ───────────────────────────────────
+function applyLetterStyle(span, boxType) {
+  if (boxType === 'box-w') {
+    span.style.color      = '#0d0d0d';
+    span.style.background = '#f5f0ea';
+    span.style.padding    = '0 2px';
+    span.style.outline    = '';
+  } else if (boxType === 'box-b') {
+    span.style.color      = '#f5f0ea';
+    span.style.background = '#0d0d0d';
+    span.style.padding    = '0 2px';
+    span.style.outline    = '2.5px solid #f5f0ea';
+  } else {
+    span.style.color      = '#f5f0ea';
+    span.style.background = 'transparent';
+    span.style.padding    = '0';
+    span.style.outline    = '';
+  }
+}
+
 export default function SectionNav() {
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const ul = wrap.querySelector('ul');
+
+    const TOTAL      = NAV_ITEMS.length;
+    const CONT_W     = TUNE.containerW;
+    const CONT_H     = TUNE.containerH;
+    const ARC_CX     = CONT_W + TUNE.arcOffset;
+    const ARC_CY     = CONT_H / 2;
+    const R          = TUNE.radius;
+    const ARC_START  = TUNE.arcStart;
+    const ARC_END    = TUNE.arcEnd;
+    const DPR        = window.devicePixelRatio || 1;
+
+    const itemData   = [];
+    const liEls      = [];
+    let   cancelled  = false;
+    let   scrollIo   = null;
+
+    document.fonts.ready.then(() => {
+      if (cancelled) return;
+
+      NAV_ITEMS.forEach(({ href, label }, idx) => {
+        const len  = label.length;
+        const seed = label.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), idx * 13);
+
+        const d = {
+          label, href,
+          idleNudges:  genNudges(len, makeRand(seed),       TUNE.idleNudgeY,  TUNE.idleNudgeR),
+          hoverNudges: genNudges(len, makeRand(seed + 777), TUNE.hoverNudgeY, TUNE.hoverNudgeR),
+          idleBoxes:   genBoxes(len,  makeRand(seed + 111)),
+          hoverBoxes:  genBoxes(len,  makeRand(seed + 222)),
+          idleSizes:   genSizes(len,  makeRand(seed + 333)),
+          hoverSizes:  genSizes(len,  makeRand(seed + 444)),
+          _raf: null, active: false,
+        };
+        itemData.push(d);
+
+        // ── li element ──
+        const li = document.createElement('li');
+        Object.assign(li.style, {
+          position: 'absolute', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          pointerEvents: 'auto',
+        });
+
+        // Arc position
+        const t        = TOTAL === 1 ? 0.5 : idx / (TOTAL - 1);
+        const angleDeg = ARC_START + t * (ARC_END - ARC_START);
+        const angleRad = angleDeg * Math.PI / 180;
+        li.style.left            = (ARC_CX - R * Math.cos(angleRad)) + 'px';
+        li.style.top             = (ARC_CY + R * Math.sin(angleRad) - 28) + 'px';
+        li.style.transform       = `rotate(${angleDeg * TUNE.tilt}deg)`;
+        li.style.transformOrigin = 'left center';
+
+        // ── Arrow ──
+        const arrow = document.createElement('span');
+        Object.assign(arrow.style, {
+          color: '#d00010', fontSize: '1rem', lineHeight: '1',
+          opacity: '0', transform: 'scaleX(0)', transformOrigin: 'left center',
+          transition: 'opacity 0.12s, transform 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+          flexShrink: '0',
+        });
+        arrow.textContent = '▶';
+        li.appendChild(arrow);
+        d.arrow = arrow;
+
+        // ── HTML word ──
+        const wordDiv = document.createElement('div');
+        Object.assign(wordDiv.style, { display: 'inline-flex', alignItems: 'flex-end', lineHeight: '1' });
+
+        const spans = label.split('').map((ch, i) => {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          Object.assign(span.style, {
+            fontFamily: "'Teko', sans-serif", fontWeight: '700',
+            display: 'inline-block', lineHeight: '1', textTransform: 'uppercase',
+            transition: 'color 0.12s ease, background 0.12s ease, font-size 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+            fontSize: `${d.idleSizes[i]}rem`,
+            transform: `translateY(${d.idleNudges[i].y}px) rotate(${d.idleNudges[i].r}deg)`,
+          });
+          applyLetterStyle(span, d.idleBoxes[i]);
+          wordDiv.appendChild(span);
+          return span;
+        });
+        d.spans   = spans;
+        d.wordDiv = wordDiv;
+        li.appendChild(wordDiv);
+
+        // ── Canvas word ──
+        const canvas = document.createElement('canvas');
+        Object.assign(canvas.style, { display: 'none', imageRendering: 'pixelated' });
+        li.appendChild(canvas);
+        d.canvas = canvas;
+
+        ul.appendChild(li);
+        liEls.push(li);
+
+        // ── Hover ──
+        li.addEventListener('mouseenter', () => {
+          if (d.active) return;
+          spans.forEach((s, i) => {
+            applyLetterStyle(s, d.hoverBoxes[i]);
+            s.style.fontSize  = `${d.hoverSizes[i]}rem`;
+            s.style.transform = `translateY(${d.hoverNudges[i].y}px) rotate(${d.hoverNudges[i].r}deg)`;
+          });
+          arrow.style.opacity   = '1';
+          arrow.style.transform = 'scaleX(1)';
+        });
+        li.addEventListener('mouseleave', () => {
+          if (d.active) return;
+          spans.forEach((s, i) => {
+            applyLetterStyle(s, d.idleBoxes[i]);
+            s.style.fontSize  = `${d.idleSizes[i]}rem`;
+            s.style.transform = `translateY(${d.idleNudges[i].y}px) rotate(${d.idleNudges[i].r}deg)`;
+          });
+          arrow.style.opacity   = '0';
+          arrow.style.transform = 'scaleX(0)';
+        });
+
+        // ── Click ──
+        li.addEventListener('click', () => {
+          const target = document.querySelector(href);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+
+          // deactivate all others
+          itemData.forEach((od, oi) => {
+            if (oi === idx) return;
+            if (od._raf) { cancelAnimationFrame(od._raf); od._raf = null; }
+            od.active           = false;
+            od.wordDiv.style.display = 'inline-flex';
+            od.canvas.style.display  = 'none';
+            od.arrow.style.opacity   = '0';
+            od.arrow.style.transform = 'scaleX(0)';
+            od.spans.forEach((s, si) => {
+              applyLetterStyle(s, od.idleBoxes[si]);
+              s.style.fontSize  = `${od.idleSizes[si]}rem`;
+              s.style.transform = `translateY(${od.idleNudges[si].y}px) rotate(${od.idleNudges[si].r}deg)`;
+            });
+          });
+
+          // snapshot current visual state for smooth transition
+          const fromState = spans.map(s => {
+            const tr    = s.style.transform;
+            const yMatch = tr.match(/translateY\(([\d.-]+)px\)/);
+            const rMatch = tr.match(/rotate\(([\d.-]+)deg\)/);
+            return {
+              y:    yMatch ? parseFloat(yMatch[1]) : 0,
+              r:    rMatch ? parseFloat(rMatch[1]) : 0,
+              size: parseFloat(s.style.fontSize) || 3,
+            };
+          });
+
+          d.active              = true;
+          d.wordDiv.style.display = 'none';
+          d.canvas.style.display  = 'inline-block';
+          arrow.style.opacity     = '1';
+          arrow.style.transform   = 'scaleX(1)';
+          startWave(idx, fromState);
+        });
+      });
+
+      // activate first item on load
+      activateItem(0);
+
+      // ── Scroll spy ────────────────────────────────────────
+      const sectionEls  = NAV_ITEMS.map(item => document.querySelector(item.href));
+      const intersecting = new Set();
+      scrollIo = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) intersecting.add(entry.target);
+          else intersecting.delete(entry.target);
+        });
+        if (intersecting.size === 0) return;
+        // pick the topmost intersecting section (highest on page)
+        let topmost = null;
+        intersecting.forEach(el => {
+          if (!topmost || el.getBoundingClientRect().top < topmost.getBoundingClientRect().top)
+            topmost = el;
+        });
+        if (!topmost) return;
+        const idx = sectionEls.indexOf(topmost);
+        if (idx !== -1) activateItem(idx);
+      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+      sectionEls.forEach(el => { if (el) scrollIo.observe(el); });
+    });
+
+    // ── Activate helper ───────────────────────────────────
+    function activateItem(idx) {
+      const d = itemData[idx];
+      if (!d || d.active) return;
+      // deactivate all others
+      itemData.forEach((od, oi) => {
+        if (oi === idx) return;
+        if (od._raf) { cancelAnimationFrame(od._raf); od._raf = null; }
+        od.active                = false;
+        od.wordDiv.style.display = 'inline-flex';
+        od.canvas.style.display  = 'none';
+        od.arrow.style.opacity   = '0';
+        od.arrow.style.transform = 'scaleX(0)';
+        od.spans.forEach((s, si) => {
+          applyLetterStyle(s, od.idleBoxes[si]);
+          s.style.fontSize  = `${od.idleSizes[si]}rem`;
+          s.style.transform = `translateY(${od.idleNudges[si].y}px) rotate(${od.idleNudges[si].r}deg)`;
+        });
+      });
+      d.active                = true;
+      d.wordDiv.style.display = 'none';
+      d.canvas.style.display  = 'inline-block';
+      d.arrow.style.opacity   = '1';
+      d.arrow.style.transform = 'scaleX(1)';
+      startWave(idx);
+    }
+
+    // ── Wave canvas renderer ──────────────────────────────
+    function startWave(idx, fromState) {
+      const d      = itemData[idx];
+      const canvas = d.canvas;
+      const label  = d.label;
+
+      const PX         = 16;
+      const PAD        = TUNE.boxPad;
+      const NUDGE_PAD  = TUNE.nudgePad;
+      const TRANS_MS   = TUNE.transitionMs;
+      const startTime  = performance.now();
+      let   waveOffset = 0;
+
+      const mc   = document.createElement('canvas');
+      mc.width   = 1200; mc.height = 200;
+      const mctx = mc.getContext('2d');
+
+      const ease = t => 1 - Math.pow(1 - t, 3);
+
+      const idleLetters = label.split('').map((ch, i) => ({
+        ch: ch.toUpperCase(),
+        fs: d.idleSizes[i] * PX,
+        nudgeY: d.idleNudges[i].y,
+        nudgeR: d.idleNudges[i].r,
+        box:    d.idleBoxes[i],
+      }));
+
+      const from = fromState
+        ? fromState.map(f => ({ y: f.y, r: f.r, size: f.size }))
+        : idleLetters.map(l => ({ y: l.nudgeY, r: l.nudgeR, size: l.fs / PX }));
+
+      function frame() {
+        if (!d.active) return;
+
+        const elapsed = performance.now() - startTime;
+        const tt      = ease(Math.min(elapsed / TRANS_MS, 1));
+
+        const fLetters = idleLetters.map((target, i) => ({
+          ...target,
+          nudgeY: from[i].y + (target.nudgeY - from[i].y) * tt,
+          nudgeR: from[i].r + (target.nudgeR - from[i].r) * tt,
+          fs:     (from[i].size + (target.fs / PX - from[i].size) * tt) * PX,
+        }));
+
+        const fMetrics = fLetters.map(l => {
+          mctx.font     = `700 ${l.fs}px Teko, sans-serif`;
+          const m       = mctx.measureText(l.ch);
+          const ascent  = m.actualBoundingBoxAscent  || l.fs * 0.78;
+          const descent = m.actualBoundingBoxDescent || l.fs * 0.12;
+          const boxW    = l.box !== 'plain' ? m.width + PAD * 2 : m.width;
+          return { boxW, ascent, descent };
+        });
+
+        const maxAsc  = Math.max(...fMetrics.map(m => m.ascent))  + NUDGE_PAD;
+        const maxDesc = Math.max(...fMetrics.map(m => m.descent)) + NUDGE_PAD;
+        const fH      = Math.ceil(maxAsc + maxDesc);
+        const fW      = Math.ceil(fMetrics.reduce((s, m) => s + m.boxW, 0)) + 4;
+        const fBase   = maxAsc;
+
+        if (canvas.width !== fW * DPR || canvas.height !== fH * DPR) {
+          canvas.width        = fW * DPR;
+          canvas.height       = fH * DPR;
+          canvas.style.width  = fW + 'px';
+          canvas.style.height = fH + 'px';
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.scale(DPR, DPR);
+
+        const xPos = [];
+        let x = 2;
+        fMetrics.forEach(m => { xPos.push(x); x += m.boxW; });
+
+        function drawPass(colorPlain, colorBoxW, colorBoxB, outlineColor) {
+          fLetters.forEach((l, i) => {
+            const fm    = fMetrics[i];
+            const textX = l.box !== 'plain' ? xPos[i] + PAD : xPos[i];
+            const textY = fBase + l.nudgeY;
+            ctx.save();
+            const cx = xPos[i] + fm.boxW / 2, cy = fBase - fm.ascent / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate(l.nudgeR * Math.PI / 180);
+            ctx.translate(-cx, -cy);
+            ctx.font         = `700 ${l.fs}px Teko, sans-serif`;
+            ctx.textBaseline = 'alphabetic';
+            if (l.box === 'box-w') {
+              ctx.fillStyle = colorBoxW;
+              ctx.fillRect(xPos[i], textY - fm.ascent, fm.boxW, fm.ascent + fm.descent);
+              ctx.fillStyle = '#0d0d0d';
+            } else if (l.box === 'box-b') {
+              ctx.fillStyle = '#0d0d0d';
+              ctx.fillRect(xPos[i], textY - fm.ascent, fm.boxW, fm.ascent + fm.descent);
+              ctx.strokeStyle = outlineColor; ctx.lineWidth = 2;
+              ctx.strokeRect(xPos[i]+1, textY-fm.ascent+1, fm.boxW-2, fm.ascent+fm.descent-2);
+              ctx.fillStyle = colorBoxB;
+            } else {
+              ctx.fillStyle = colorPlain;
+            }
+            ctx.fillText(l.ch, textX, textY);
+            ctx.restore();
+          });
+        }
+
+        // Pass 1: all white
+        drawPass('#f5f0ea', '#f5f0ea', '#f5f0ea', '#f5f0ea');
+
+        // Pass 2: red wave clip from bottom
+        const amp    = fH * TUNE.waveAmp;
+        const mid    = fH * TUNE.waveMidline;
+        const freq   = (Math.PI * 2) / fW * TUNE.waveFreq;
+        ctx.save();
+        ctx.beginPath();
+        for (let px = 0; px <= fW; px++) {
+          const wy = mid + Math.sin(px * freq + waveOffset) * amp;
+          px === 0 ? ctx.moveTo(px, wy) : ctx.lineTo(px, wy);
+        }
+        ctx.lineTo(fW, fH); ctx.lineTo(0, fH); ctx.closePath(); ctx.clip();
+        drawPass('#d00010', '#d00010', '#d00010', '#d00010');
+        ctx.restore();
+
+        ctx.restore();
+        waveOffset += TUNE.waveSpeed;
+        d._raf = requestAnimationFrame(frame);
+      }
+
+      d._raf = requestAnimationFrame(frame);
+    }
+
+    return () => {
+      cancelled = true;
+      if (scrollIo) scrollIo.disconnect();
+      itemData.forEach(d => { if (d._raf) cancelAnimationFrame(d._raf); });
+      ul.innerHTML = '';
+    };
+  }, []);
+
   return (
-    <div className="fixed right-[152px] top-1/2 z-[99] flex -translate-y-1/2 flex-col gap-2">
-      {LINKS.map((l) => (
-        <a
-          key={l.href}
-          href={l.href}
-          className="block whitespace-nowrap rounded-lg bg-wire-block px-3.5 py-[7px] text-[11px] text-wire-text-dark no-underline transition-colors hover:bg-wire-block-dark"
-        >
-          {l.label}
-        </a>
-      ))}
+    <div
+      ref={wrapRef}
+      style={{ position: 'fixed', right: TUNE.rightEdge, top: '50%', transform: 'translateY(-50%)', zIndex: 99, pointerEvents: 'none' }}
+    >
+      <ul style={{ listStyle: 'none', width: TUNE.containerW, height: TUNE.containerH, position: 'relative', pointerEvents: 'none' }} />
     </div>
   );
 }
