@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react';
 
+const FONTS = [
+  { css: "'Teko', sans-serif",          weight: '700' },
+  { css: "'Cooper Black', serif",        weight: '400' },
+  { css: "Clarendon, Georgia, serif",   weight: '700' },
+];
+
 const NAV_ITEMS = [
   { href: '#hero',       label: 'Hero' },
   { href: '#games',      label: 'Games' },
   { href: '#characters', label: 'Characters' },
-  { href: '#music',      label: 'Music' },
-  { href: '#news',       label: 'News' },
+  { href: '#music',      label: 'Music', overrides: { boxes: { 2: 'box-b' } } },
+  { href: '#news',       label: 'News',  overrides: { sizeMult: { 1: 0.72, 2: 0.72 } } },
 ];
 
 // ── Tunables ──────────────────────────────────────────────
@@ -58,6 +64,15 @@ function genNudges(len, rand, yRange, rRange) {
 function genSizes(len, rand) {
   return Array.from({ length: len }, () =>
     Math.max(TUNE.minSizeRem, TUNE.baseSizeRem + (rand() - 0.5) * TUNE.sizeVariance));
+}
+function genFonts(len, rand) {
+  // Build a balanced array (each font appears floor(len/3) or ceil(len/3) times) then shuffle
+  const arr = Array.from({ length: len }, (_, i) => FONTS[i % FONTS.length]);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 function genBoxes(len, rand) {
   return Array.from({ length: len }, () => {
@@ -114,7 +129,7 @@ export default function SectionNav() {
     document.fonts.ready.then(() => {
       if (cancelled) return;
 
-      NAV_ITEMS.forEach(({ href, label }, idx) => {
+      NAV_ITEMS.forEach(({ href, label, overrides = {} }, idx) => {
         const len  = label.length;
         const seed = label.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), idx * 13);
 
@@ -126,9 +141,14 @@ export default function SectionNav() {
           hoverBoxes:  genBoxes(len,  makeRand(seed + 222)),
           idleSizes:   genSizes(len,  makeRand(seed + 333)),
           hoverSizes:  genSizes(len,  makeRand(seed + 444)),
+          idleFonts:   genFonts(len,  makeRand(seed + 555)),
           _raf: null, active: false,
         };
         itemData.push(d);
+
+        // Apply per-letter overrides
+        if (overrides.boxes)    Object.entries(overrides.boxes).forEach(([i, v]) => { d.idleBoxes[+i] = v; });
+        if (overrides.sizeMult) Object.entries(overrides.sizeMult).forEach(([i, v]) => { d.idleSizes[+i] *= v; });
 
         // ── li element ──
         const li = document.createElement('li');
@@ -167,7 +187,7 @@ export default function SectionNav() {
           const span = document.createElement('span');
           span.textContent = ch;
           Object.assign(span.style, {
-            fontFamily: "'Teko', sans-serif", fontWeight: '700',
+            fontFamily: d.idleFonts[i].css, fontWeight: d.idleFonts[i].weight,
             display: 'inline-block', lineHeight: '1', textTransform: 'uppercase',
             transition: 'color 0.12s ease, background 0.12s ease, font-size 0.15s cubic-bezier(0.34,1.56,0.64,1)',
             fontSize: `${d.idleSizes[i]}rem`,
@@ -331,6 +351,7 @@ export default function SectionNav() {
         nudgeY: d.idleNudges[i].y,
         nudgeR: d.idleNudges[i].r,
         box:    d.idleBoxes[i],
+        font:   d.idleFonts[i],
       }));
 
       const from = fromState
@@ -351,7 +372,7 @@ export default function SectionNav() {
         }));
 
         const fMetrics = fLetters.map(l => {
-          mctx.font     = `700 ${l.fs}px Teko, sans-serif`;
+          mctx.font     = `${l.font.weight} ${l.fs}px ${l.font.css}`;
           const m       = mctx.measureText(l.ch);
           const ascent  = m.actualBoundingBoxAscent  || l.fs * 0.78;
           const descent = m.actualBoundingBoxDescent || l.fs * 0.12;
@@ -391,7 +412,7 @@ export default function SectionNav() {
             ctx.translate(cx, cy);
             ctx.rotate(l.nudgeR * Math.PI / 180);
             ctx.translate(-cx, -cy);
-            ctx.font         = `700 ${l.fs}px Teko, sans-serif`;
+            ctx.font         = `${l.font.weight} ${l.fs}px ${l.font.css}`;
             ctx.textBaseline = 'alphabetic';
             if (l.box === 'box-w') {
               ctx.fillStyle = colorBoxW;
