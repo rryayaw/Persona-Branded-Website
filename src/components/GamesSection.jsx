@@ -8,6 +8,7 @@ const GAMES = [
     name: 'Persona 5 Royal',
     title: '/assets/title-persona5.png',
     color: '#d00010',
+    hoverScale: 1.7,
     images: [
       '/assets/promo5-1.jpg',
       'https://placehold.co/1280x720/1a1a1a/d00010?text=Persona+5+Royal',
@@ -21,6 +22,7 @@ const GAMES = [
     name: 'Persona 4 Golden',
     title: '/assets/title-persona4.webp',
     color: '#f2c200',
+    hoverScale: 1.3,
     images: [
       '/assets/promo4-1.avif',
       'https://placehold.co/1280x720/1a1a1a/f2c200?text=Persona+4+Golden',
@@ -35,6 +37,7 @@ const GAMES = [
     title: '/assets/title-persona3.webp',
     titleScale: 1.45,
     color: '#1e6edc',
+    hoverScale: 1.7,
     images: [
       '/assets/promo3-1.avif',
       'https://placehold.co/1280x720/1a1a1a/1e6edc?text=Persona+3+Reload',
@@ -236,10 +239,12 @@ export default function GamesSection() {
 
       <GamesBackground activeIndex={gameIndex} />
 
-      {/* Background dim — darkens everything behind the TV on hover */}
+      {/* Background dim — darkens everything behind the TV on hover.
+          Full-bleed (100vw) so it covers the asides too, not just the column. */}
       <div
         style={{
-          position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+          position: 'absolute', top: 0, bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: '100vw', zIndex: 5, pointerEvents: 'none',
           background: '#000',
           opacity: showPreview ? 0.6 : 0,
           transition: 'opacity 0.35s ease',
@@ -340,13 +345,17 @@ export default function GamesSection() {
             className="pointer-events-none select-none"
             style={{
               position: 'absolute',
-              left: SCREEN.left, top: SCREEN.top, width: SCREEN.width, height: SCREEN.height,
-              objectFit: 'cover',
-              borderRadius: '10px / 14px',
+              // Centered on the screen rect; width drives size, height follows
+              // the image's natural ratio — so there are no letterbox bars.
+              left: '42.5%',  // SCREEN.left 11% + width 63%/2
+              top: '46%',     // SCREEN.top 10.5% + height 71%/2
+              width: '64%',
+              height: 'auto',
               zIndex: 3,
               opacity: showPreview ? 1 : 0,
-              transform: showPreview ? 'scale(1.12) translateY(-12px)' : 'scale(1) translateY(0)',
-              transformOrigin: 'center',
+              transform: showPreview
+                ? `translate(-50%, calc(-50% - 14px)) scale(${game.hoverScale || 1.3})`
+                : 'translate(-50%, -50%) scale(1)',
               filter: 'contrast(1.05) saturate(1.12) drop-shadow(0 16px 26px rgba(0,0,0,0.75))',
               transition: 'opacity 0.28s ease, transform 0.38s cubic-bezier(0.34,1.56,0.64,1)',
             }}

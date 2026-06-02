@@ -294,7 +294,15 @@ export default function SectionNav() {
         });
         if (!topmost) return;
         const idx = sectionEls.indexOf(topmost);
-        if (idx !== -1) activateItem(idx);
+        if (idx !== -1) {
+          activateItem(idx);
+          
+          //tuck the nav when it games section so user can read game description
+          const tuck = NAV_ITEMS[idx].href === '#games';
+          wrap.style.transform = tuck
+            ? 'translateX(120%) translateY(-50%)'
+            : 'translateY(-50%)';
+        }
       }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
       sectionEls.forEach(el => { if (el) scrollIo.observe(el); });
     });
@@ -468,7 +476,7 @@ export default function SectionNav() {
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'fixed', right: TUNE.rightEdge, top: '50%', transform: 'translateY(-50%)', zIndex: 99, pointerEvents: 'none' }}
+      style={{ position: 'fixed', right: TUNE.rightEdge, top: '50%', transform: 'translateY(-50%)', zIndex: 99, pointerEvents: 'none', transition: 'transform 0.55s cubic-bezier(0.5, 0, 0.2, 1)' }}
     >
       <ul style={{ listStyle: 'none', width: TUNE.containerW, height: TUNE.containerH, position: 'relative', pointerEvents: 'none' }} />
     </div>
