@@ -99,6 +99,7 @@ export default function GamesSection() {
   const [tvState, setTvState]     = useState('off'); // 'off' | 'turning-on' | 'on' | 'turning-off'
   const [flick, setFlick]         = useState(false);
   const [visible, setVisible]     = useState(false);
+  const [hoverTV, setHoverTV]     = useState(false);
 
   const game = GAMES[gameIndex];
 
@@ -187,6 +188,7 @@ export default function GamesSection() {
 
   const showImage = tvState === 'on' || tvState === 'turning-off';
   const showVideo = tvState === 'turning-on';
+  const showPreview = hoverTV && tvState === 'on';
 
   return (
     <section
@@ -234,13 +236,28 @@ export default function GamesSection() {
 
       <GamesBackground activeIndex={gameIndex} />
 
+      {/* Background dim — darkens everything behind the TV on hover */}
+      <div
+        style={{
+          position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+          background: '#000',
+          opacity: showPreview ? 0.6 : 0,
+          transition: 'opacity 0.35s ease',
+        }}
+      />
+
       {/* ── Main row ── */}
       <div className="relative z-10 flex w-full max-w-[1100px] items-center justify-center gap-2">
         {/* Prev arrow */}
         <ArrowButton dir="left" color={game.color} onClick={prevImg} />
 
         {/* TV */}
-        <div className="relative shrink-0" style={{ width: 'min(56vw, 620px)', aspectRatio: '1165 / 855' }}>
+        <div
+          className="relative shrink-0"
+          style={{ width: 'min(56vw, 620px)', aspectRatio: '1165 / 855' }}
+          onMouseEnter={() => setHoverTV(true)}
+          onMouseLeave={() => setHoverTV(false)}
+        >
           {/* Ground shadow — elliptical cast shadow beneath the set */}
           <div
             style={{
@@ -313,6 +330,26 @@ export default function GamesSection() {
             draggable={false}
             className="pointer-events-none absolute inset-0 h-full w-full select-none"
             style={{ zIndex: 2, filter: 'brightness(0.7)' }}
+          />
+
+          {/* Hover preview — clean image lunges out of the set, no CRT */}
+          <img
+            src={game.images[imgIndex]}
+            alt=""
+            draggable={false}
+            className="pointer-events-none select-none"
+            style={{
+              position: 'absolute',
+              left: SCREEN.left, top: SCREEN.top, width: SCREEN.width, height: SCREEN.height,
+              objectFit: 'cover',
+              borderRadius: '10px / 14px',
+              zIndex: 3,
+              opacity: showPreview ? 1 : 0,
+              transform: showPreview ? 'scale(1.12) translateY(-12px)' : 'scale(1) translateY(0)',
+              transformOrigin: 'center',
+              filter: 'contrast(1.05) saturate(1.12) drop-shadow(0 16px 26px rgba(0,0,0,0.75))',
+              transition: 'opacity 0.28s ease, transform 0.38s cubic-bezier(0.34,1.56,0.64,1)',
+            }}
           />
         </div>
 
