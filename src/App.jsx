@@ -17,10 +17,10 @@ bgm.preload = 'auto';
 
 const tryPlay = () => { if (bgm.paused) bgm.play().catch(() => {}); };
 
-// Play as soon as enough audio is buffered
+
+// play when enough of audio buffered
 bgm.addEventListener('canplaythrough', tryPlay, { once: true });
 
-// Fallback: any user gesture (covers click, touch, keyboard)
 ['click', 'keydown', 'pointerdown'].forEach(evt =>
   window.addEventListener(evt, tryPlay, { once: true, passive: true })
 );
@@ -45,13 +45,34 @@ function AppContent() {
   );
 }
 
-// stage: 'loading' → 'transitioning' → 'app'
+const MIN_MS = 5000; // minimum time to show the loading screen
+
+// stage: 'loading' -> 'transitioning' -> 'app'
 export default function App() {
   const [stage, setStage] = useState('loading');
 
   useEffect(() => {
-    const t = setTimeout(() => setStage('transitioning'), 5000);
-    return () => clearTimeout(t);
+    let minDone   = false;
+    let assetsDone = false;
+
+    function tryAdvance() {
+      if (minDone && assetsDone) setStage('transitioning');
+    }
+
+    // Minimum display time so the loading animation always plays
+    const minTimer = setTimeout(() => { minDone = true; tryAdvance(); }, MIN_MS);
+
+    //fire this when all resources r fully fetched
+    if (document.readyState === 'complete') {
+      assetsDone = true;
+    } else {
+      window.addEventListener('load', () => { assetsDone = true; tryAdvance(); }, { once: true });
+    }
+
+    // Fonts on top of window.load, just to be safe
+    document.fonts.ready.then(() => { assetsDone = true; tryAdvance(); });
+
+    return () => clearTimeout(minTimer);
   }, []);
 
   const handleTransitionComplete = useCallback(() => setStage('app'), []);

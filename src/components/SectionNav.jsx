@@ -26,8 +26,8 @@ const TUNE = {
   tilt:         0.75,  // multiplier — how much each item tilts with the arc (0 = no tilt)
 
   // Letter sizing & chaos
-  baseSizeRem:  3.0,   // rem — base font size for letters
-  sizeVariance: 1.8,   // rem — ± random variance on top of base size
+  baseSizeRem:  2.6,   // rem — base font size for letters
+  sizeVariance: 1.4,   // rem — ± random variance on top of base size
   minSizeRem:   1.8,   // rem — minimum letter size
   idleNudgeY:   7,     // px — max vertical nudge in idle state
   idleNudgeR:   4,     // deg — max rotation nudge in idle state
@@ -46,7 +46,7 @@ const TUNE = {
   boxPad:       4,     // px — horizontal padding inside box-style letters
 
   // Position
-  rightEdge:    150,   // px — distance from the right edge of the viewport (increase = move left)
+  rightEdge:    115,   // px — distance from the right edge of the viewport (increase = move left)
 };
 // ──────────────────────────────────────────────────────────
 
