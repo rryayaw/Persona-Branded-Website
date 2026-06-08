@@ -278,33 +278,59 @@ export default function SectionNav() {
       activateItem(0);
 
       // ── Scroll spy ────────────────────────────────────────
-      const sectionEls  = NAV_ITEMS.map(item => document.querySelector(item.href));
-      const intersecting = new Set();
-      scrollIo = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) intersecting.add(entry.target);
-          else intersecting.delete(entry.target);
-        });
-        if (intersecting.size === 0) return;
-        // pick the topmost intersecting section (highest on page)
-        let topmost = null;
-        intersecting.forEach(el => {
-          if (!topmost || el.getBoundingClientRect().top < topmost.getBoundingClientRect().top)
-            topmost = el;
-        });
-        if (!topmost) return;
-        const idx = sectionEls.indexOf(topmost);
-        if (idx !== -1) {
-          activateItem(idx);
-          
-          //tuck the nav when it games section so user can read game description
-          const tuck = NAV_ITEMS[idx].href === '#games';
-          wrap.style.transform = tuck
-            ? 'translateX(120%) translateY(-50%)'
-            : 'translateY(-50%)';
+      // Deterministic: the active section is whichever one straddles the
+      // viewport's vertical center. Avoids IntersectionObserver edge cases
+      // where a tall/overflowing child desyncs the intersecting set.
+      const sectionEls = NAV_ITEMS.map(item => document.querySelector(item.href));
+      let rafPending = false;
+
+      function pick() {
+        rafPending = false;
+        const center = window.innerHeight / 2;
+
+        let chosen = -1;
+        for (let i = 0; i < sectionEls.length; i++) {
+          const el = sectionEls[i];
+          if (!el) continue;
+          const r = el.getBoundingClientRect();
+          if (r.top <= center && r.bottom > center) { chosen = i; break; }
         }
-      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
-      sectionEls.forEach(el => { if (el) scrollIo.observe(el); });
+        // Fallback (very top/bottom of page): nearest section edge to center
+        if (chosen === -1) {
+          let best = Infinity;
+          sectionEls.forEach((el, i) => {
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const d = Math.min(Math.abs(r.top - center), Math.abs(r.bottom - center));
+            if (d < best) { best = d; chosen = i; }
+          });
+        }
+        if (chosen === -1) return;
+
+        activateItem(chosen);
+        // tuck the nav when in games section so user can read game description
+        const tuck = NAV_ITEMS[chosen].href === '#games';
+        wrap.style.transform = tuck
+          ? 'translateX(120%) translateY(-50%)'
+          : 'translateY(-50%)';
+      }
+
+      function onScroll() {
+        if (rafPending) return;
+        rafPending = true;
+        requestAnimationFrame(pick);
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      pick();
+
+      scrollIo = {
+        disconnect() {
+          window.removeEventListener('scroll', onScroll);
+          window.removeEventListener('resize', onScroll);
+        },
+      };
     });
 
     // ── Activate helper ───────────────────────────────────
