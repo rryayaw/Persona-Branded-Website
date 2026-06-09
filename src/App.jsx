@@ -9,21 +9,7 @@ import GamesSection from './components/GamesSection.jsx';
 import CharactersSection from './components/CharactersSection.jsx';
 import MusicSection from './components/MusicSection.jsx';
 import NewsSection from './components/NewsSection.jsx';
-
-const bgm = new Audio('/assets/audio/bgm-song1-lastSuprise.mp3');
-bgm.loop = true;
-bgm.volume = 0.2;
-bgm.preload = 'auto';
-
-const tryPlay = () => { if (bgm.paused) bgm.play().catch(() => {}); };
-
-
-// play when enough of audio buffered
-bgm.addEventListener('canplaythrough', tryPlay, { once: true });
-
-['click', 'keydown', 'pointerdown'].forEach(evt =>
-  window.addEventListener(evt, tryPlay, { once: true, passive: true })
-);
+import { bgm } from './bgm.js';
 
 function AppContent() {
   return (

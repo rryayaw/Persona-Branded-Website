@@ -28,7 +28,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ───────── Loading screen ───────── */
+/* Loading screen */
 
 @keyframes fadeIn {
   from { opacity: 0; }

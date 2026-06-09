@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import PurchaseLink from './PurchaseLink.jsx';
+import { bgm, toggleMute } from '../bgm.js';
 
 export default function Navbar() {
   // true while the hero section is the section in view
   const [inHero, setInHero] = useState(true);
+  const [muted, setMuted] = useState(bgm.muted);
 
   useEffect(() => {
     const hero = document.getElementById('hero');
@@ -48,8 +50,20 @@ export default function Navbar() {
       <div className="flex items-center gap-8">
         <PurchaseLink />
         <div className="flex items-center gap-4">
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
-            <img src="/assets/icon-music.png" alt="Music" className="h-9 w-9 object-contain" />
+          <button
+            onClick={() => setMuted(toggleMute())}
+            aria-label={muted ? 'Unmute music' : 'Mute music'}
+            aria-pressed={muted}
+            className={`relative flex h-9 w-9 items-center justify-center rounded-full bg-wire-block transition ${muted ? 'ring-2 ring-[#d00010]' : ''}`}
+          >
+            <img
+              src="/assets/icon-music.png"
+              alt="Music"
+              className={`h-9 w-9 object-contain transition-opacity ${muted ? 'opacity-40' : 'opacity-100'}`}
+            />
+            {muted && (
+              <span className="pointer-events-none absolute h-[2px] w-7 rotate-45 rounded-full bg-[#d00010]" />
+            )}
           </button>
           <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
             <img src="/assets/icon-sound.png" alt="Sound" className="h-8 w-8 object-contain" />

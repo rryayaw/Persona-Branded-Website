@@ -13,7 +13,7 @@ const MIX_FONTS = [
 export default function CharName({ text, variant = 'teko', accent = '#d00010', size = 78, caps = false, color }) {
   const display = caps ? text.toUpperCase() : text;
 
-  // ── Narukami / P4G layered outline ──
+  // Narukami / P4G layered outline
   if (variant === 'p4') {
     const outer = Math.max(2.4, size * 0.135); // outer black outline
     const mid   = Math.max(1.4, size * 0.075); // orange outline
@@ -40,7 +40,7 @@ export default function CharName({ text, variant = 'teko', accent = '#d00010', s
     );
   }
 
-  // ── Joker / 3-font ransom mix ──
+  // Joker / 3-font ransom mix
   if (variant === 'mix') {
     const sh     = Math.max(3, size * 0.06);
     const stroke = Math.max(2, size * 0.07);
@@ -62,7 +62,7 @@ export default function CharName({ text, variant = 'teko', accent = '#d00010', s
     );
   }
 
-  // ── Makoto / Teko caps + blurry shadow (default) ──
+  // Makoto / Teko caps + blurry shadow (default)
   return (
     <span style={{
       fontFamily: "'Teko', sans-serif", fontWeight: 700, textTransform: 'uppercase',

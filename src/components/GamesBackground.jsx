@@ -18,7 +18,7 @@ function makeRand(seed) {
   return () => { s = (Math.imul(1664525, s) + 1013904223) >>> 0; return s / 0xffffffff; };
 }
 
-// ── Halftone dot grid ──────────────────────────────────────
+// Halftone dot grid
 const DOTS = [];
 (function buildDots() {
   const rand = makeRand(42);
@@ -139,7 +139,7 @@ export default function GamesBackground({ activeIndex = 0 }) {
       });
     }
 
-    // ── Effect 0: helicopter spotlights (P5) ────────────────
+    // Effect 0: helicopter spotlights (P5)
     function drawSpotlights(t, k) {
       if (k <= 0.001) return;
       SPOTLIGHTS.forEach(sp => {
@@ -175,7 +175,7 @@ export default function GamesBackground({ activeIndex = 0 }) {
       });
     }
 
-    // ── Effect 1: drifting star particles (P4) ──────────────
+    // Effect 1: drifting star particles (P4)
     function drawParticles(t, k) {
       if (k <= 0.001) return;
       ctx.save();
@@ -214,7 +214,7 @@ export default function GamesBackground({ activeIndex = 0 }) {
       ctx.restore();
     }
 
-    // ── Effect 2: sliding wave band (P3) ────────────────────
+    // Effect 2: sliding wave band (P3)
     function drawWave(t, k) {
       if (k <= 0.001) return;
       const [r, g, b] = curColor;

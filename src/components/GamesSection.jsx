@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import GamesBackground from './GamesBackground.jsx';
 
-// ── Game data ──────────────────────────────────────────────
+// Game data
 const GAMES = [
   {
     id: 'p5r',
@@ -48,15 +48,14 @@ const GAMES = [
   },
 ];
 
-// ── Screen rectangle inside tv-games.png (fractions of frame) ──
+// Screen rectangle inside tv-games.png (fractions of frame)
 const SCREEN = { left: '11%', top: '10.5%', width: '63%', height: '71%' };
 
 const TV_ON_MS  = 800; // first 0.8s of tv.mp4
 const TV_OFF_MS = 550; // length of custom collapse
 
-// ── SFX via Web Audio ──────────────────────────────────────
+// SFX via Web Audio
 // Routed through a splitter→merger so the (left-only) source is
-// duplicated to BOTH ears, with a gain stage for extra loudness.
 const TV_ON_SRC  = '/assets/audio/tv-on.mp3';
 const TV_OFF_SRC = '/assets/audio/tv-off.mp3';
 
@@ -115,7 +114,7 @@ export default function GamesSection() {
 
   const setState = (s) => { stateRef.current = s; setTvState(s); };
 
-  // ── Turn-on / turn-off sequences ──────────────────────────
+  // Turn-on / turn-off sequences
   function turnOn() {
     if (stateRef.current === 'on' || stateRef.current === 'turning-on') return;
     clearTimeout(offTimer.current);
@@ -141,7 +140,7 @@ export default function GamesSection() {
     offTimer.current = setTimeout(() => setState('off'), TV_OFF_MS);
   }
 
-  // ── Visibility drives power ───────────────────────────────
+  // Visibility drives power
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -161,14 +160,14 @@ export default function GamesSection() {
     };
   }, []);
 
-  // ── Brief CRT flicker on any image/game change ────────────
+  // Brief CRT flicker on any image/game change
   function flicker() {
     setFlick(true);
     clearTimeout(flickTimer.current);
     flickTimer.current = setTimeout(() => setFlick(false), 160);
   }
 
-  // ── Auto-advance to next game every 10s while visible ─────
+  // Auto-advance to next game every 10s while visible
   // Timer resets whenever gameIndex changes (incl. manual picks).
   useEffect(() => {
     if (!visible) return;
@@ -251,7 +250,7 @@ export default function GamesSection() {
         }}
       />
 
-      {/* ── Main row ── */}
+      {/* Main row */}
       <div className="relative z-10 flex w-full max-w-[1100px] items-center justify-center gap-2">
         {/* Prev arrow */}
         <ArrowButton dir="left" color={game.color} onClick={prevImg} />
@@ -399,7 +398,7 @@ export default function GamesSection() {
         </div>
       </div>
 
-      {/* ── Game switcher ── */}
+      {/* Game switcher */}
       <div className="relative z-10 flex gap-4">
         {GAMES.map((g, i) => {
           const active = i === gameIndex;
@@ -427,7 +426,7 @@ export default function GamesSection() {
   );
 }
 
-// ── Arrow button (P5 style) ────────────────────────────────
+// Arrow button (P5 style)
 function ArrowButton({ dir, color, onClick }) {
   const [hover, setHover] = useState(false);
   const left = dir === 'left';

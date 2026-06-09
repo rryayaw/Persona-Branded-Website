@@ -16,13 +16,13 @@ function makeRand(seed) {
   return () => { s = (Math.imul(1664525, s) + 1013904223) >>> 0; return s / 0xffffffff; };
 }
 
-// ── Effect 0: helicopter spotlights (P5) ───────────────────
+// Effect 0: helicopter spotlights (P5)
 const SPOTLIGHTS = [
   { speed:  0.00022, spread: 0.18, reach: 1.15, alpha: 0.08,  phase: 0,        originNX: 0.2 },
   { speed: -0.00018, spread: 0.15, reach: 1.2,  alpha: 0.075, phase: Math.PI,  originNX: 0.8 },
 ];
 
-// ── Effect 1: drifting star sparkles (P4) ──────────────────
+// Effect 1: drifting star sparkles (P4)
 const PARTICLES = Array.from({ length: 80 }, (_, i) => {
   const rand = makeRand(i * 53 + 11);
   const ang = rand() * Math.PI * 2;
@@ -37,7 +37,7 @@ const PARTICLES = Array.from({ length: 80 }, (_, i) => {
   };
 });
 
-// ── Effect 2: wind streaks (P3) ────────────────────────────
+// Effect 2: wind streaks (P3)
 const WIND = Array.from({ length: 46 }, (_, i) => {
   const rand = makeRand(i * 71 + 5);
   return {
@@ -76,7 +76,7 @@ export default function CharactersBackground({ activeIndex = 0 }) {
     const part = PARTICLES.map(p => ({ x: p.nx, y: p.ny }));
     const wind = WIND.map(w => ({ x: Math.random() })); // live x positions
 
-    // ── Effect 0 ──
+    // Effect 0
     function drawSpotlights(t, k) {
       if (k <= 0.001) return;
       SPOTLIGHTS.forEach(sp => {
@@ -105,7 +105,7 @@ export default function CharactersBackground({ activeIndex = 0 }) {
       });
     }
 
-    // ── Effect 1 ──
+    // Effect 1
     function drawParticles(t, k) {
       if (k <= 0.001) return;
       ctx.save();
@@ -142,7 +142,7 @@ export default function CharactersBackground({ activeIndex = 0 }) {
       ctx.restore();
     }
 
-    // ── Effect 2: wind ──
+    // Effect 2: wind
     let lastT = performance.now();
     function drawWind(t, k, dt) {
       if (k <= 0.001) return;

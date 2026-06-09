@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { href: '#news',       label: 'News',  overrides: { sizeMult: { 1: 0.72, 2: 0.72 } } },
 ];
 
-// ── Tunables ──────────────────────────────────────────────
+// Tunables
 const TUNE = {
   // Arc geometry
   containerW:  460,    // px — width of the arc bounding box
@@ -48,9 +48,8 @@ const TUNE = {
   // Position
   rightEdge:    115,   // px — distance from the right edge of the viewport (increase = move left)
 };
-// ──────────────────────────────────────────────────────────
 
-// ── Seeded random helpers ──────────────────────────────────
+// Seeded random helpers
 function makeRand(seed) {
   let s = (seed ^ 0xdeadbeef) >>> 0;
   return () => { s = (Math.imul(1664525, s) + 1013904223) >>> 0; return s / 0xffffffff; };
@@ -83,7 +82,7 @@ function genBoxes(len, rand) {
   });
 }
 
-// ── Letter style applier ───────────────────────────────────
+// Letter style applier
 function applyLetterStyle(span, boxType) {
   if (boxType === 'box-w') {
     span.style.color      = '#0d0d0d';
@@ -150,7 +149,7 @@ export default function SectionNav() {
         if (overrides.boxes)    Object.entries(overrides.boxes).forEach(([i, v]) => { d.idleBoxes[+i] = v; });
         if (overrides.sizeMult) Object.entries(overrides.sizeMult).forEach(([i, v]) => { d.idleSizes[+i] *= v; });
 
-        // ── li element ──
+        // li element
         const li = document.createElement('li');
         Object.assign(li.style, {
           position: 'absolute', cursor: 'pointer',
@@ -167,7 +166,7 @@ export default function SectionNav() {
         li.style.transform       = `rotate(${angleDeg * TUNE.tilt}deg)`;
         li.style.transformOrigin = 'left center';
 
-        // ── Arrow ──
+        // Arrow
         const arrow = document.createElement('span');
         Object.assign(arrow.style, {
           color: '#d00010', fontSize: '1rem', lineHeight: '1',
@@ -179,7 +178,7 @@ export default function SectionNav() {
         li.appendChild(arrow);
         d.arrow = arrow;
 
-        // ── HTML word ──
+        // HTML word
         const wordDiv = document.createElement('div');
         Object.assign(wordDiv.style, { display: 'inline-flex', alignItems: 'flex-end', lineHeight: '1' });
 
@@ -201,7 +200,7 @@ export default function SectionNav() {
         d.wordDiv = wordDiv;
         li.appendChild(wordDiv);
 
-        // ── Canvas word ──
+        // Canvas word
         const canvas = document.createElement('canvas');
         Object.assign(canvas.style, { display: 'none', imageRendering: 'pixelated' });
         li.appendChild(canvas);
@@ -210,7 +209,7 @@ export default function SectionNav() {
         ul.appendChild(li);
         liEls.push(li);
 
-        // ── Hover ──
+        // Hover
         li.addEventListener('mouseenter', () => {
           if (d.active) return;
           spans.forEach((s, i) => {
@@ -232,7 +231,7 @@ export default function SectionNav() {
           arrow.style.transform = 'scaleX(0)';
         });
 
-        // ── Click ──
+        // Click
         li.addEventListener('click', () => {
           const target = document.querySelector(href);
           if (target) target.scrollIntoView({ behavior: 'smooth' });
@@ -277,7 +276,7 @@ export default function SectionNav() {
       // activate first item on load
       activateItem(0);
 
-      // ── Scroll spy ────────────────────────────────────────
+      // Scroll spy
       // Deterministic: the active section is whichever one straddles the
       // viewport's vertical center. Avoids IntersectionObserver edge cases
       // where a tall/overflowing child desyncs the intersecting set.
@@ -333,7 +332,7 @@ export default function SectionNav() {
       };
     });
 
-    // ── Activate helper ───────────────────────────────────
+    // Activate helper
     function activateItem(idx) {
       const d = itemData[idx];
       if (!d || d.active) return;
@@ -360,7 +359,7 @@ export default function SectionNav() {
       startWave(idx);
     }
 
-    // ── Wave canvas renderer ──────────────────────────────
+    // Wave canvas renderer
     function startWave(idx, fromState) {
       const d      = itemData[idx];
       const canvas = d.canvas;
