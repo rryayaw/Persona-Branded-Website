@@ -15,6 +15,16 @@ export const SFX = {
 
 let _ctx = null;
 const _bufs = {};
+let _muted = false;
+
+// Toggle all UI sound effects on/off; returns the new muted state.
+export function toggleSfxMute() {
+  _muted = !_muted;
+  return _muted;
+}
+export function isSfxMuted() {
+  return _muted;
+}
 
 function ctx() {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -34,6 +44,7 @@ export function preloadAllSfx() {
 
 // Play a configured sound by key (reads the tunables above)
 export function playSound(key) {
+  if (_muted) return;
   const cfg = SFX[key];
   if (!cfg) return;
   load(cfg.src).then((buf) => {

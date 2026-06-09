@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import PurchaseLink from './PurchaseLink.jsx';
 import { bgm, toggleMute } from '../bgm.js';
+import { toggleSfxMute, isSfxMuted } from '../sfx.js';
 
 export default function Navbar() {
   // true while the hero section is the section in view
   const [inHero, setInHero] = useState(true);
   const [muted, setMuted] = useState(bgm.muted);
+  const [sfxMuted, setSfxMuted] = useState(isSfxMuted());
 
   useEffect(() => {
     const hero = document.getElementById('hero');
@@ -65,8 +67,20 @@ export default function Navbar() {
               <span className="pointer-events-none absolute h-[2px] w-7 rotate-45 rounded-full bg-[#d00010]" />
             )}
           </button>
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
-            <img src="/assets/icon-sound.png" alt="Sound" className="h-8 w-8 object-contain" />
+          <button
+            onClick={() => setSfxMuted(toggleSfxMute())}
+            aria-label={sfxMuted ? 'Unmute sound effects' : 'Mute sound effects'}
+            aria-pressed={sfxMuted}
+            className={`relative flex h-9 w-9 items-center justify-center rounded-full bg-wire-block transition ${sfxMuted ? 'ring-2 ring-[#d00010]' : ''}`}
+          >
+            <img
+              src="/assets/icon-sound.png"
+              alt="Sound"
+              className={`h-8 w-8 object-contain transition-opacity ${sfxMuted ? 'opacity-40' : 'opacity-100'}`}
+            />
+            {sfxMuted && (
+              <span className="pointer-events-none absolute h-[2px] w-7 rotate-45 rounded-full bg-[#d00010]" />
+            )}
           </button>
           <button className="flex h-9 w-9 items-center justify-center rounded-full bg-wire-block">
             <img src="/assets/icon-mail.png" alt="Mail" className="h-9 w-9 object-contain" />
