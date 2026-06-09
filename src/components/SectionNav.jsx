@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { playSound, preloadAllSfx } from '../sfx.js';
 
 const FONTS = [
   { css: "'Teko', sans-serif",          weight: '700' },
@@ -110,6 +111,8 @@ export default function SectionNav() {
     if (!wrap) return;
     const ul = wrap.querySelector('ul');
 
+    preloadAllSfx();
+
     const TOTAL      = NAV_ITEMS.length;
     const CONT_W     = TUNE.containerW;
     const CONT_H     = TUNE.containerH;
@@ -211,6 +214,7 @@ export default function SectionNav() {
 
         // Hover
         li.addEventListener('mouseenter', () => {
+          playSound('sectionHover');
           if (d.active) return;
           spans.forEach((s, i) => {
             applyLetterStyle(s, d.hoverBoxes[i]);
@@ -233,6 +237,7 @@ export default function SectionNav() {
 
         // Click
         li.addEventListener('click', () => {
+          playSound('sectionSelect');
           const target = document.querySelector(href);
           if (target) target.scrollIntoView({ behavior: 'smooth' });
 

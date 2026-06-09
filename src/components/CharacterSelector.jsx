@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from '../sfx.js';
 
 const JELLY_KEYFRAMES = `
   @keyframes char-jelly {
@@ -16,7 +17,12 @@ export default function CharacterSelector({ chars, activeIndex, onSelect }) {
     <div className="flex flex-col gap-14">
       <style>{JELLY_KEYFRAMES}</style>
       {chars.map((c, i) => (
-        <SelectorItem key={c.id} char={c} selected={i === activeIndex} onClick={() => onSelect(i)} />
+        <SelectorItem
+          key={c.id}
+          char={c}
+          selected={i === activeIndex}
+          onClick={() => { playSound('characterSelect'); onSelect(i); }}
+        />
       ))}
     </div>
   );
