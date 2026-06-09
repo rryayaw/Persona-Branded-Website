@@ -45,34 +45,69 @@ function AppContent() {
   );
 }
 
-const MIN_MS = 5000; // minimum time to show the loading screen
+const MIN_MS = 2500;  // minimum time to show the loading screen
+const MAX_MS = 20000; // hard cap so a stuck/missing asset can't hang forever
+
+// Heavy assets the main page renders only AFTER loading ends — preload them
+// up front so the site is actually ready when the wipe reveals it.
+const PRELOAD_IMAGES = [
+  '/logo.png', '/logo-p5.png', '/city_background.jpg',
+  '/assets/graphic-1.png',
+  '/assets/rating-teen.svg', '/assets/logo-ps.svg', '/assets/logo-xbox.svg', '/assets/logo-steam.svg',
+  '/assets/icon-mail.png', '/assets/icon-music.png', '/assets/icon-sound.png',
+  '/assets/promo5-1.jpg', '/assets/promo4-1.avif', '/assets/promo3-1.avif',
+  '/assets/title-persona5.png', '/assets/title-persona4.webp', '/assets/title-persona3.webp',
+  '/assets/tv-games.png', '/assets/titlebox.png',
+  '/assets/charbg-p5.png', '/assets/charbg-p4.jpg', '/assets/charbg-p3.jpg',
+  '/assets/char-p5.png', '/assets/char-p4.png', '/assets/char-p3.png',
+  '/assets/bigchar-p5.png', '/assets/bigchar-p4.png', '/assets/bigchar-p3.png',
+];
+
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = img.onerror = () => resolve();
+    img.src = src;
+  });
+}
 
 // stage: 'loading' -> 'transitioning' -> 'app'
 export default function App() {
   const [stage, setStage] = useState('loading');
 
   useEffect(() => {
-    let minDone   = false;
+    let cancelled  = false;
+    let minDone    = false;
     let assetsDone = false;
 
     function tryAdvance() {
-      if (minDone && assetsDone) setStage('transitioning');
+      if (!cancelled && minDone && assetsDone) setStage('transitioning');
     }
 
     // Minimum display time so the loading animation always plays
     const minTimer = setTimeout(() => { minDone = true; tryAdvance(); }, MIN_MS);
+    // Safety cap: never wait longer than this even if an asset never resolves
+    const maxTimer = setTimeout(() => { assetsDone = true; tryAdvance(); }, MAX_MS);
 
-    //fire this when all resources r fully fetched
-    if (document.readyState === 'complete') {
-      assetsDone = true;
-    } else {
-      window.addEventListener('load', () => { assetsDone = true; tryAdvance(); }, { once: true });
-    }
+    const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+    const bgmReady = new Promise((resolve) => {
+      if (bgm.readyState >= 4) return resolve();
+      bgm.addEventListener('canplaythrough', resolve, { once: true });
+      bgm.addEventListener('error', resolve, { once: true });
+    });
 
-    // Fonts on top of window.load, just to be safe
-    document.fonts.ready.then(() => { assetsDone = true; tryAdvance(); });
+    // Done when every image + the fonts + enough buffered audio are ready
+    Promise.all([
+      ...PRELOAD_IMAGES.map(preloadImage),
+      fontsReady,
+      bgmReady,
+    ]).then(() => { assetsDone = true; tryAdvance(); });
 
-    return () => clearTimeout(minTimer);
+    return () => {
+      cancelled = true;
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+    };
   }, []);
 
   const handleTransitionComplete = useCallback(() => setStage('app'), []);
