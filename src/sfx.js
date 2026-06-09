@@ -7,19 +7,22 @@
 export const SFX_MASTER = 0.9;   // 0 = silent, 1 = full, >1 = boost
 
 export const SFX = {
-  sectionHover:    { src: '/assets/audio/section-hover.wav',    volume: 20, rate: 1.0 },
+  sectionHover:    { src: '/assets/audio/section-hover.wav',    volume: 2, rate: 1.0 },
   sectionSelect:   { src: '/assets/audio/section-select.wav',   volume: 2,  rate: 1.0 },
   characterSelect: { src: '/assets/audio/character-select.wav', volume: 1,  rate: 1.0 },
 };
 
 
+const MUTE_KEY = 'p5-sfx-muted';
+
 let _ctx = null;
 const _bufs = {};
-let _muted = false;
+let _muted = (() => { try { return localStorage.getItem(MUTE_KEY) === '1'; } catch { return false; } })();
 
 // Toggle all UI sound effects on/off; returns the new muted state.
 export function toggleSfxMute() {
   _muted = !_muted;
+  try { localStorage.setItem(MUTE_KEY, _muted ? '1' : '0'); } catch { /* ignore */ }
   return _muted;
 }
 export function isSfxMuted() {
