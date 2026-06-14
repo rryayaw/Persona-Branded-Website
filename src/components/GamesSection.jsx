@@ -9,10 +9,11 @@ const GAMES = [
     title: '/assets/title-persona5.png',
     color: '#d00010',
     hoverScale: 1.7,
+    font: "'Teko', sans-serif",
     images: [
       '/assets/promo5-1.jpg',
-      'https://placehold.co/1280x720/1a1a1a/d00010?text=Persona+5+Royal',
-      'https://placehold.co/1280x720/d00010/ffffff?text=Persona+5+Royal',
+      '/assets/p5-gameplay1.gif',
+      '/assets/p5-gameplay2.gif',
     ],
     description:
       'Don the mask and take Tokyo by storm. As the Phantom Thieves of Hearts, infiltrate the twisted desires of corrupt adults and steal their distorted treasures. The definitive edition adds a new semester, a new confidant, and a brand-new palace.',
@@ -23,10 +24,11 @@ const GAMES = [
     title: '/assets/title-persona4.webp',
     color: '#f2c200',
     hoverScale: 1.3,
+    font: "Clarendon, Georgia, serif",
     images: [
       '/assets/promo4-1.avif',
-      'https://placehold.co/1280x720/1a1a1a/f2c200?text=Persona+4+Golden',
-      'https://placehold.co/1280x720/f2c200/000000?text=Persona+4+Golden',
+      '/assets/p4-gameplay1.gif',
+      '/assets/p4-gameplay2.gif',
     ],
     description:
       'A foggy town, a string of murders, and a TV world only you can enter. Spend a year in rural Inaba uncovering the truth with your friends, balancing high-school life with dungeon-crawling. Golden adds new social links, scenes, and an epilogue.',
@@ -38,10 +40,11 @@ const GAMES = [
     titleScale: 1.45,
     color: '#1e6edc',
     hoverScale: 1.7,
+    font: "Helvetica, Arial, sans-serif",
     images: [
       '/assets/promo3-1.avif',
-      'https://placehold.co/1280x720/1a1a1a/1e6edc?text=Persona+3+Reload',
-      'https://placehold.co/1280x720/1e6edc/ffffff?text=Persona+3+Reload',
+      '/assets/p3-gameplay1.gif',
+      '/assets/p3-gameplay2.gif',
     ],
     description:
       'Embrace your fate during the Dark Hour. Wield your Evoker, summon your Persona, and ascend Tartarus alongside SEES to confront the mystery of the Shadows. A full-scale remake of the game that started the modern Persona era.',
@@ -72,7 +75,7 @@ function loadBuffer(url) {
 }
 [TV_ON_SRC, TV_OFF_SRC].forEach(loadBuffer); // warm cache
 
-function playSfx(url, volume = 3.0) {
+function playSfx(url, volume = 1.3) {
   loadBuffer(url).then(buf => {
     const ctx = _ctx();
     if (ctx.state === 'suspended') ctx.resume();
@@ -100,8 +103,7 @@ export default function GamesSection() {
   const [imgIndex, setImgIndex]   = useState(0);
   const [tvState, setTvState]     = useState('off'); // 'off' | 'turning-on' | 'on' | 'turning-off'
   const [flick, setFlick]         = useState(false);
-  const [visible, setVisible]     = useState(false);
-  const [hoverTV, setHoverTV]     = useState(false);
+  const [popped, setPopped]       = useState(false);
 
   const game = GAMES[gameIndex];
 
@@ -134,6 +136,7 @@ export default function GamesSection() {
   function turnOff() {
     if (stateRef.current === 'off' || stateRef.current === 'turning-off') return;
     clearTimeout(onTimer.current);
+    setPopped(false);
     setState('turning-off');
     playSfx(TV_OFF_SRC);
     clearTimeout(offTimer.current);
@@ -146,8 +149,8 @@ export default function GamesSection() {
     if (!el) return;
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.intersectionRatio >= 0.45) { setVisible(true); turnOn(); }
-        else { setVisible(false); turnOff(); }
+        if (entry.intersectionRatio >= 0.45) turnOn();
+        else turnOff();
       },
       { threshold: [0, 0.45, 1] }
     );
@@ -167,18 +170,6 @@ export default function GamesSection() {
     flickTimer.current = setTimeout(() => setFlick(false), 160);
   }
 
-  // Auto-advance to next game every 10s while visible
-  // Timer resets whenever gameIndex changes (incl. manual picks).
-  useEffect(() => {
-    if (!visible) return;
-    const t = setTimeout(() => {
-      setGameIndex(i => (i + 1) % GAMES.length);
-      setImgIndex(0);
-      flicker();
-    }, 10000);
-    return () => clearTimeout(t);
-  }, [gameIndex, visible]);
-
   function prevImg() { setImgIndex(i => (i - 1 + game.images.length) % game.images.length); flicker(); }
   function nextImg() { setImgIndex(i => (i + 1) % game.images.length); flicker(); }
   function pickGame(idx) {
@@ -190,7 +181,7 @@ export default function GamesSection() {
 
   const showImage = tvState === 'on' || tvState === 'turning-off';
   const showVideo = tvState === 'turning-on';
-  const showPreview = hoverTV && tvState === 'on';
+  const showPreview = popped && tvState === 'on';
 
   return (
     <section
@@ -258,9 +249,8 @@ export default function GamesSection() {
         {/* TV */}
         <div
           className="relative shrink-0"
-          style={{ width: 'min(56vw, 620px)', aspectRatio: '1165 / 855' }}
-          onMouseEnter={() => setHoverTV(true)}
-          onMouseLeave={() => setHoverTV(false)}
+          style={{ width: 'min(56vw, 620px)', aspectRatio: '1165 / 855', cursor: tvState === 'on' ? 'pointer' : 'default' }}
+          onClick={() => { if (tvState === 'on') setPopped((v) => !v); }}
         >
           {/* Ground shadow — elliptical cast shadow beneath the set */}
           <div
@@ -395,6 +385,20 @@ export default function GamesSection() {
               <p className="text-[13px] leading-[1.65] text-white">{game.description}</p>
             </div>
           </div>
+
+          {/* Buy now — same Steam link as the navbar */}
+          <p className="mt-1 text-[13px] italic leading-snug text-white/85">
+            Interested in playing? Buy now by clicking{' '}
+            <a
+              href="https://store.steampowered.com/curator/36333614/sale/persona"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: game.color, fontWeight: 700, fontStyle: 'normal', textDecoration: 'underline' }}
+            >
+              here
+            </a>
+            .
+          </p>
         </div>
       </div>
 
@@ -406,8 +410,9 @@ export default function GamesSection() {
             <button
               key={g.id}
               onClick={() => pickGame(i)}
-              className="font-teko text-[20px] font-bold uppercase tracking-wide transition-all duration-200"
+              className="text-[22px] font-bold uppercase tracking-wide transition-all duration-200"
               style={{
+                fontFamily: g.font,
                 color: active ? '#fff' : '#bbb',
                 background: active ? g.color : 'rgba(20,20,20,0.85)',
                 border: `2px solid ${active ? g.color : '#444'}`,

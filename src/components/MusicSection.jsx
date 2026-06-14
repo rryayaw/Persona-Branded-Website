@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { bgm, SONGS, getSongIndex, setSong, togglePlay, getAnalyser } from '../bgm.js';
+import SectionDivider from './SectionDivider.jsx';
 
 const AUTO_SPEED      = 1.5; // degrees per frame while playing (~4s / rev @60fps)
 const SECONDS_PER_REV = 6;   // audio seconds scrubbed per full manual rotation
@@ -53,6 +54,7 @@ export default function MusicSection() {
     const ctx = canvas.getContext('2d');
     let raf, phase = 0;
     let buf = null;
+    let fbuf = null;
 
     const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
     resize();
@@ -97,6 +99,29 @@ export default function MusicSection() {
       ctx.globalAlpha = 0.06;
       ctx.shadowBlur = 0;
       ctx.fill();
+      ctx.restore();
+
+      // Frequency-bar equalizer rising from the bottom edge
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 16;
+      const BARS = 72;
+      const bw = w / BARS;
+      for (let i = 0; i < BARS; i++) {
+        let v;
+        if (analyser) {
+          if (!fbuf || fbuf.length !== analyser.frequencyBinCount) fbuf = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(fbuf);
+          const idx = Math.floor((i / BARS) * (fbuf.length * 0.7));
+          v = fbuf[idx] / 255;
+        } else {
+          v = 0.12 + 0.10 * (0.5 + 0.5 * Math.sin(phase * 2 + i * 0.5));
+        }
+        const bh = v * h * 0.22;
+        ctx.globalAlpha = 0.10 + v * 0.22;
+        ctx.fillRect(i * bw + bw * 0.2, h - bh, bw * 0.6, bh);
+      }
       ctx.restore();
 
       phase += 0.03;
@@ -153,6 +178,8 @@ export default function MusicSection() {
       className="relative flex min-h-screen flex-col items-center justify-center gap-4 px-10 pb-20 pt-[80px]"
     >
       <style>{`@keyframes vinyl-none {}`}</style>
+
+      <SectionDivider />
 
       {/* Live waveform background (full-bleed) */}
       <div

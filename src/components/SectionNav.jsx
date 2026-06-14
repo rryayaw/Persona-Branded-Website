@@ -46,8 +46,13 @@ const TUNE = {
   nudgePad:     16,    // px — extra canvas padding to accommodate letter nudges
   boxPad:       4,     // px — horizontal padding inside box-style letters
 
-  // Position
-  rightEdge:    115,   // px — distance from the right edge of the viewport (increase = move left)
+  // Position / peek behavior
+  rightEdge:    115,   // px — distance from the right edge of the viewport when revealed
+  peekHide:     170,   // px — how far the nav slides off to the right when idle (half-hidden)
+  peekStrip:    180,   // px — width of the right-edge hover zone that reveals the nav
+  peekStripH:   700,   // px — height of that hover zone (taller = easier to hit)
+  revealMs:     450,   // ms — slide in/out duration
+  hideDelay:    500,   // ms — grace period before re-hiding after the mouse leaves
 };
 
 // Seeded random helpers
@@ -127,6 +132,36 @@ export default function SectionNav() {
     const liEls      = [];
     let   cancelled  = false;
     let   scrollIo   = null;
+
+    // ── Half-hidden peek + hover-to-reveal ──
+    let revealed = false;
+    let hideT = null;
+    function applyReveal() {
+      wrap.style.transform = revealed
+        ? 'translate(0, -50%)'
+        : `translate(${TUNE.peekHide}px, -50%)`;
+      wrap.style.pointerEvents = revealed ? 'auto' : 'none';
+    }
+    function show() { clearTimeout(hideT); if (!revealed) { revealed = true; applyReveal(); } }
+    function hide() {
+      clearTimeout(hideT);
+      hideT = setTimeout(() => { revealed = false; applyReveal(); }, TUNE.hideDelay);
+    }
+    applyReveal(); // start hidden
+
+    // Thin always-present hover zone on the right edge that reveals the nav
+    const strip = document.createElement('div');
+    Object.assign(strip.style, {
+      position: 'fixed', right: '0', top: '50%', transform: 'translateY(-50%)',
+      width: TUNE.peekStrip + 'px', height: TUNE.peekStripH + 'px', zIndex: '98',
+    });
+    strip.addEventListener('mouseenter', show);
+    strip.addEventListener('mouseleave', hide);
+    document.body.appendChild(strip);
+
+    // Keep it open while the cursor is anywhere over the revealed nav
+    wrap.addEventListener('mouseenter', show);
+    wrap.addEventListener('mouseleave', hide);
 
     document.fonts.ready.then(() => {
       if (cancelled) return;
@@ -214,6 +249,7 @@ export default function SectionNav() {
 
         // Hover
         li.addEventListener('mouseenter', () => {
+          show();
           playSound('sectionHover');
           if (d.active) return;
           spans.forEach((s, i) => {
@@ -225,6 +261,7 @@ export default function SectionNav() {
           arrow.style.transform = 'scaleX(1)';
         });
         li.addEventListener('mouseleave', () => {
+          hide();
           if (d.active) return;
           spans.forEach((s, i) => {
             applyLetterStyle(s, d.idleBoxes[i]);
@@ -312,13 +349,6 @@ export default function SectionNav() {
         if (chosen === -1) return;
 
         activateItem(chosen);
-        // tuck the nav away on sections whose interactive content sits on the
-        // right edge (game description, song selectors) where it would overlap.
-        const href = NAV_ITEMS[chosen].href;
-        const tuck = href === '#games' || href === '#music';
-        wrap.style.transform = tuck
-          ? 'translateX(120%) translateY(-50%)'
-          : 'translateY(-50%)';
       }
 
       function onScroll() {
@@ -499,6 +529,8 @@ export default function SectionNav() {
 
     return () => {
       cancelled = true;
+      clearTimeout(hideT);
+      strip.remove();
       if (scrollIo) scrollIo.disconnect();
       itemData.forEach(d => { if (d._raf) cancelAnimationFrame(d._raf); });
       ul.innerHTML = '';
@@ -508,7 +540,13 @@ export default function SectionNav() {
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'fixed', right: TUNE.rightEdge, top: '50%', transform: 'translateY(-50%)', zIndex: 99, pointerEvents: 'none', transition: 'transform 0.55s cubic-bezier(0.5, 0, 0.2, 1)' }}
+      style={{
+        position: 'fixed', right: TUNE.rightEdge, top: '50%', zIndex: 99,
+        width: TUNE.containerW, height: TUNE.containerH,
+        transform: `translate(${TUNE.peekHide}px, -50%)`, // starts half-hidden
+        pointerEvents: 'none',
+        transition: `transform ${TUNE.revealMs}ms cubic-bezier(0.5, 0, 0.2, 1)`,
+      }}
     >
       <ul style={{ listStyle: 'none', width: TUNE.containerW, height: TUNE.containerH, position: 'relative', pointerEvents: 'none' }} />
     </div>

@@ -7,8 +7,8 @@
 export const SFX_MASTER = 0.9;   // 0 = silent, 1 = full, >1 = boost
 
 export const SFX = {
-  sectionHover:    { src: '/assets/audio/section-hover.wav',    volume: 2, rate: 1.0 },
-  sectionSelect:   { src: '/assets/audio/section-select.wav',   volume: 2,  rate: 1.0 },
+  sectionHover:    { src: '/assets/audio/section-hover.wav',    volume: 1.3, rate: 1.0 },
+  sectionSelect:   { src: '/assets/audio/section-select.wav',   volume: 1.5,  rate: 1.0 },
   characterSelect: { src: '/assets/audio/character-select.wav', volume: 1,  rate: 1.0 },
 };
 

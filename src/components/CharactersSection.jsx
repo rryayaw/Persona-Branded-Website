@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CharactersBackground from './CharactersBackground.jsx';
 import CharacterSelector from './CharacterSelector.jsx';
 import CharName from './CharName.jsx';
+import SectionDivider from './SectionDivider.jsx';
 
 // One per background (P5 / P4 / P3). pSize/pPos frame the selector head crop.
 const CHARS = [
@@ -56,6 +57,7 @@ export default function CharactersSection() {
       id="characters"
       className="relative flex min-h-screen flex-col items-center justify-center px-10 pb-20 pt-[80px]"
     >
+      <SectionDivider />
       <CharactersBackground activeIndex={activeIndex} />
 
       <style>{`
