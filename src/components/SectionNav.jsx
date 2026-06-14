@@ -312,8 +312,10 @@ export default function SectionNav() {
         if (chosen === -1) return;
 
         activateItem(chosen);
-        // tuck the nav when in games section so user can read game description
-        const tuck = NAV_ITEMS[chosen].href === '#games';
+        // tuck the nav away on sections whose interactive content sits on the
+        // right edge (game description, song selectors) where it would overlap.
+        const href = NAV_ITEMS[chosen].href;
+        const tuck = href === '#games' || href === '#music';
         wrap.style.transform = tuck
           ? 'translateX(120%) translateY(-50%)'
           : 'translateY(-50%)';

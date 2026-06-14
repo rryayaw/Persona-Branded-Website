@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import PurchaseLink from './PurchaseLink.jsx';
-import { bgm, toggleMute } from '../bgm.js';
+import { toggleMute, isBgmMuted } from '../bgm.js';
 import { toggleSfxMute, isSfxMuted } from '../sfx.js';
 
 export default function Navbar() {
   // true while the hero section is the section in view
   const [inHero, setInHero] = useState(true);
-  const [muted, setMuted] = useState(bgm.muted);
+  const [muted, setMuted] = useState(isBgmMuted());
   const [sfxMuted, setSfxMuted] = useState(isSfxMuted());
 
   useEffect(() => {
