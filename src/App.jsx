@@ -63,11 +63,16 @@ export default function App() {
 
   useEffect(() => {
     let cancelled  = false;
+    let advanced   = false;
     let minDone    = false;
     let assetsDone = false;
 
     function tryAdvance() {
-      if (!cancelled && minDone && assetsDone) setStage('transitioning');
+      if (cancelled || advanced || !minDone || !assetsDone) return;
+      advanced = true;
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+      setStage('transitioning');
     }
 
     // Minimum display time so the loading animation always plays
